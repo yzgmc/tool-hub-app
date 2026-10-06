@@ -4,7 +4,7 @@
   "tag": "运维",
   "icon": "🧹",
   "color": "#0d9488",
-  "desc": "内存占用一览，一键清理释放内存",
+  "desc": "内存占用一览，一键清理、进程管理",
   "type": "native",
   "pinned": true,
   "pages": [
@@ -19,8 +19,22 @@
         ]},
         {"type": "gauge", "title": "内存占用（阈值 85%）", "endpoint": "/proxy/memclean/api/overview", "refresh": 5, "value": "$.mem.percent", "max": 100, "unit": "%"},
         {"type": "actions", "title": "操作", "actions": [
-          {"label": "立即清理内存", "endpoint": "/proxy/memclean/api/clean-now", "method": "POST", "confirm": "确定要立即清理内存吗？", "style": "danger"}
+          {"label": "立即清理内存", "endpoint": "/proxy/memclean/api/clean-now", "method": "POST", "confirm": "确定要立即清理内存吗？", "style": "danger"},
+          {"label": "清空事件日志", "endpoint": "/proxy/memclean/api/events", "method": "DELETE", "confirm": "确定清空全部事件日志吗？", "style": "danger"}
         ]}
+      ]
+    },
+    {
+      "title": "进程",
+      "layout": [
+        {"type": "list", "title": "内存占用 TOP20", "endpoint": "/proxy/memclean/api/processes?top=20", "refresh": 10,
+         "listPath": "$.items",
+         "item": {"title": "$.name", "subtitle": "$.user", "value": "$.rss", "valueUnit": "MB",
+                  "actions": [
+                    {"label": "结束进程", "endpoint": "/shim/memclean/kill", "method": "POST",
+                     "paramFrom": "$.pid", "paramKey": "pid", "style": "danger",
+                     "confirm": "确定结束该进程吗？"}
+                  ]}}
       ]
     }
   ]

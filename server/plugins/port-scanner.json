@@ -4,7 +4,7 @@
   "tag": "巡检",
   "icon": "🧭",
   "color": "#a855f7",
-  "desc": "全部开放端口与网页标题一览",
+  "desc": "全部开放端口与网页标题一览，可手动触发扫描",
   "type": "native",
   "pages": [
     {
@@ -14,7 +14,11 @@
           {"label": "端口数", "value": "$.count"},
           {"label": "间隔", "value": "$.interval", "unit": "s"}
         ]},
-        {"type": "list", "title": "开放端口", "endpoint": "/proxy/scan/api/state", "refresh": 60, "item": {"title": "$.port", "subtitle": "$.proc · $.title", "value": "$.scope"}}
+        {"type": "list", "title": "开放端口", "endpoint": "/proxy/scan/api/state", "refresh": 60, "item": {"title": "$.port", "subtitle": "$.proc · $.title", "value": "$.scope"}},
+        {"type": "actions", "title": "操作", "actions": [
+          {"label": "立即扫描", "endpoint": "/proxy/scan/api/scan", "method": "POST"},
+          {"label": "刷新公网 IP", "endpoint": "/proxy/scan/api/ip", "method": "POST"}
+        ]}
       ]
     }
   ]

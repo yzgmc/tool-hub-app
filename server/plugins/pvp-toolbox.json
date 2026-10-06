@@ -4,7 +4,7 @@
   "tag": "游戏",
   "icon": "🎯",
   "color": "#ef4444",
-  "desc": "CS2 战绩总览、最近对局与数据刷新",
+  "desc": "CS2 战绩总览、最近对局与全部数据同步操作",
   "type": "native",
   "pages": [
     {
@@ -29,8 +29,14 @@
           "$.nickname", "$.steam_id", "$.matches", "$.demo_archive", "$.details_localized"
         ]},
         {"type": "actions", "title": "数据刷新", "actions": [
-          {"label": "刷新战绩列表", "endpoint": "/proxy/pvp/api/matches/refresh", "method": "POST"},
-          {"label": "刷新对局详情", "endpoint": "/proxy/pvp/api/matches/details/refresh", "method": "POST"}
+          {"label": "快速同步（战绩列表）", "endpoint": "/proxy/pvp/api/matches/refresh", "method": "POST",
+           "body": {"full": false}},
+          {"label": "全量同步（含详情）", "endpoint": "/proxy/pvp/api/matches/refresh", "method": "POST",
+           "body": {"full": true}, "confirm": "全量同步耗时较长，确定执行吗？"},
+          {"label": "扫描本地 Demo", "endpoint": "/proxy/pvp/api/demo/scan", "method": "GET"},
+          {"label": "刷新精彩时刻", "endpoint": "/proxy/pvp/api/moments/refresh", "method": "POST"},
+          {"label": "夜间同步", "endpoint": "/proxy/pvp/api/sync/nightly", "method": "POST",
+           "confirm": "立即执行夜间同步任务吗？"}
         ]}
       ]
     }

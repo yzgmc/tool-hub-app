@@ -4,7 +4,7 @@
   "tag": "AI",
   "icon": "🎙️",
   "color": "#14b8a6",
-  "desc": "录音进度与训练状态一览，远程启动训练，查看稿件清单",
+  "desc": "录音进度与训练状态一览，远程训练/稿件/体检全操作",
   "type": "native",
   "pages": [
     {
@@ -20,7 +20,10 @@
          "value": "$.progress", "status": "$.stage", "refresh": 3},
         {"type": "actions", "title": "操作", "actions": [
           {"label": "开始训练", "endpoint": "/proxy/voice/api/train/start", "method": "POST",
-           "confirm": "确定现在开始语音训练吗？"}
+           "confirm": "确定现在开始语音训练吗？"},
+          {"label": "重新生成稿件", "endpoint": "/proxy/voice/api/regen", "method": "POST",
+           "confirm": "重新生成会覆盖当前稿件，确定吗？"},
+          {"label": "录音环境体检", "endpoint": "/proxy/voice/api/preflight", "method": "GET"}
         ]}
       ]
     },

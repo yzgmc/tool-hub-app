@@ -4,7 +4,7 @@
   "tag": "监测",
   "icon": "📊",
   "color": "#22c55e",
-  "desc": "内存/负载/磁盘/交换分区实时状态",
+  "desc": "内存/负载/磁盘/容器，容器可启停重启",
   "type": "native",
   "pinned": true,
   "pages": [
@@ -18,8 +18,20 @@
         ]},
         {"type": "gauge", "title": "内存占用", "endpoint": "/proxy/memclean/api/overview", "refresh": 5, "value": "$.mem.percent", "max": 100, "unit": "%"},
         {"type": "chart", "title": "内存曲线", "endpoint": "/proxy/memclean/api/overview", "refresh": 5, "value": "$.mem.percent", "history": 120},
-        {"type": "list", "title": "磁盘分区", "endpoint": "/proxy/wiztree/api/df", "refresh": 60, "item": {"title": "$.mount", "subtitle": "$.src", "value": "$.pct", "valueUnit": "%"}},
-        {"type": "auto", "title": "原始数据", "endpoint": "/proxy/memclean/api/overview", "refresh": 30}
+        {"type": "list", "title": "磁盘分区", "endpoint": "/proxy/wiztree/api/df", "refresh": 60, "item": {"title": "$.mount", "subtitle": "$.src", "value": "$.pct", "valueUnit": "%"}}
+      ]
+    },
+    {
+      "title": "容器",
+      "layout": [
+        {"type": "list", "title": "Docker 容器", "endpoint": "/proxy/monitor/api/docker/containers", "refresh": 15,
+         "listPath": "$.containers",
+         "item": {"title": "$.name", "subtitle": "$.image", "value": "$.state",
+                  "actions": [
+                    {"label": "启动", "endpoint": "/shim/monitor/docker/start", "method": "POST", "paramFrom": "$.name", "paramKey": "name"},
+                    {"label": "停止", "endpoint": "/shim/monitor/docker/stop", "method": "POST", "paramFrom": "$.name", "paramKey": "name", "style": "danger"},
+                    {"label": "重启", "endpoint": "/shim/monitor/docker/restart", "method": "POST", "paramFrom": "$.name", "paramKey": "name"}
+                  ]}}
       ]
     }
   ]

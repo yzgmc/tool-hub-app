@@ -505,6 +505,40 @@ def jump(rest):
     return redirect("%s/%s" % (HUB, rest))
 
 
+# ------------------------------------------------------------------ 动作垫片
+# 行级操作只能注入一个动态字段，需要补静态字段的接口在这里中转。
+
+
+def _forward(path, payload):
+    try:
+        r = requests.post(HUB + path, json=payload, timeout=HTTP_TIMEOUT)
+        return app.response_class(r.content, status=r.status_code,
+                                  mimetype="application/json")
+    except requests.RequestException as e:
+        return jsonify(ok=False, msg="总控台不可达: %s" % e), 502
+
+
+@app.route("/shim/monitor/docker/<action>", methods=["POST"])
+def shim_docker(action):
+    """{name} → {name, action}，容器 启动/停止/重启。"""
+    if not _authed():
+        return _denied()
+    if action not in ("start", "stop", "restart"):
+        return jsonify(ok=False, msg="不支持的操作"), 400
+    d = request.get_json(silent=True) or {}
+    return _forward("/monitor/api/docker/action",
+                    {"name": d.get("name"), "action": action})
+
+
+@app.route("/shim/memclean/kill", methods=["POST"])
+def shim_kill():
+    """{pid} → {pid, sig:15}，友好结束进程。"""
+    if not _authed():
+        return _denied()
+    d = request.get_json(silent=True) or {}
+    return _forward("/memclean/api/kill", {"pid": d.get("pid"), "sig": 15})
+
+
 # ------------------------------------------------------------------ 新插件自动发现
 # 轮询总控台 /api/cards（TOOLS 卡片清单），发现新子应用即自动注册为
 # auto-<id>.json（WebView 形态）。手工/原生插件优先：同 id 已存在则跳过。

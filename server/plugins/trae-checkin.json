@@ -4,7 +4,7 @@
   "tag": "工具",
   "icon": "⚡",
   "color": "#f59e0b",
-  "desc": "每日自动领 Trial Code 积分，可手动触发",
+  "desc": "每日自动领 Trial Code 积分，全部操作可远程执行",
   "type": "native",
   "pages": [
     {
@@ -15,7 +15,13 @@
           "$.config.enabled", "$.config.time", "$.config.last_auto_date", "$.last_error"
         ]},
         {"type": "actions", "title": "操作", "actions": [
-          {"label": "立即签到一次", "endpoint": "/proxy/checkin/api/run", "method": "POST", "confirm": "确定现在执行一次自动签到流程吗？"}
+          {"label": "▶ 测试流程（不计积分）", "endpoint": "/proxy/checkin/api/run", "method": "POST",
+           "body": {"mode": "test"}, "confirm": "执行一次测试流程？"},
+          {"label": "⚡ 正式签到", "endpoint": "/proxy/checkin/api/run", "method": "POST",
+           "body": {"mode": "real", "confirm": true}, "confirm": "确定执行正式签到吗？当天重复执行会被拒绝。", "style": "danger"},
+          {"label": "■ 取消当前流程", "endpoint": "/proxy/checkin/api/cancel", "method": "POST"},
+          {"label": "重置今日记录", "endpoint": "/proxy/checkin/api/reset", "method": "POST",
+           "body": {"confirm": true}, "confirm": "确定重置今日签到记录吗？", "style": "danger"}
         ]}
       ]
     }

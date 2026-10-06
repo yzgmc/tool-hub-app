@@ -4,7 +4,7 @@
   "tag": "AI",
   "icon": "🎨",
   "color": "#a855f7",
-  "desc": "MC 材质生成画廊与 GPU 状态，支持示例材质一键生成",
+  "desc": "MC 材质生成画廊、GPU 状态与全部生成操作",
   "type": "native",
   "pages": [
     {
@@ -17,10 +17,25 @@
           {"label": "显存总量", "value": "$.gpu.vram_total_gb", "unit": "GB"}
         ]},
         {"type": "imagegrid", "title": "材质画廊", "endpoint": "/api/mctex-gallery", "refresh": 60,
-         "listPath": "$.items", "urlPath": "$.url", "titlePath": "$.title"},
-        {"type": "actions", "title": "生成", "actions": [
+         "listPath": "$.items", "urlPath": "$.url", "titlePath": "$.title"}
+      ]
+    },
+    {
+      "title": "生成",
+      "layout": [
+        {"type": "actions", "title": "生成任务", "actions": [
           {"label": "生成示例材质 stone", "endpoint": "/proxy/mctex/api/generate", "method": "POST",
-           "body": {"names": ["stone"]}}
+           "body": {"names": ["stone"]}},
+          {"label": "一键全流程", "endpoint": "/proxy/mctex/api/fullrun", "method": "GET",
+           "confirm": "一键全流程耗时较长，确定执行吗？"},
+          {"label": "系统自检", "endpoint": "/proxy/mctex/api/selfcheck", "method": "GET"},
+          {"label": "清空任务队列", "endpoint": "/proxy/mctex/api/jobs/clear", "method": "POST",
+           "confirm": "确定清空全部生成任务吗？", "style": "danger"}
+        ]},
+        {"type": "actions", "title": "PE Comfy 实例", "actions": [
+          {"label": "启动 PE Comfy", "endpoint": "/proxy/mctex/api/pe_comfy/start", "method": "POST"},
+          {"label": "停止 PE Comfy", "endpoint": "/proxy/mctex/api/pe_comfy/stop", "method": "POST",
+           "confirm": "确定停止 PE Comfy 吗？", "style": "danger"}
         ]}
       ]
     }
