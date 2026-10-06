@@ -17,7 +17,7 @@ struct RootView: View {
 struct SetupView: View {
     @EnvironmentObject private var store: SettingsStore
 
-    @State private var url: String = ""
+    @State private var url: String = "http://192.168.1.15:7072"
     @State private var token: String = ""
     @State private var testing = false
     @State private var testResult: String?
@@ -43,7 +43,7 @@ struct SetupView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("服务器地址").font(.footnote).foregroundColor(Theme.sub)
-                            TextField("http://192.168.1.15:7072", text: $url)
+                            TextField("http://服务器IP:端口", text: $url)
                                 .keyboardType(.URL)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
@@ -54,7 +54,7 @@ struct SetupView: View {
                         }
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Token").font(.footnote).foregroundColor(Theme.sub)
-                            TextField("服务器 /opt/tools-hub/mobile/token.txt", text: $token)
+                            TextField("粘贴服务器 token", text: $token)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .textFieldStyle(.plain)
