@@ -1,0 +1,22 @@
+{
+  "id": "vnc-hub",
+  "name": "VNC 桌面聚合",
+  "tag": "远程",
+  "icon": "🖥️",
+  "color": "#64748b",
+  "desc": "三路 VNC 目标在线状态；画面需跳转浏览器（WebSocket 限制）",
+  "type": "native",
+  "pages": [
+    {
+      "title": "状态",
+      "layout": [
+        {"type": "keyvalue", "title": "目标在线状态", "endpoint": "/proxy/vnc/api/state", "refresh": 10, "items": [
+          "$.targets.traecode", "$.targets.zzz", "$.targets.wxedge"
+        ]},
+        {"type": "actions", "title": "打开画面", "actions": [
+          {"label": "VNC 聚合页（Safari，页面内选目标连接）", "endpoint": "/jump/vnc/", "open": true}
+        ]}
+      ]
+    }
+  ]
+}

@@ -497,6 +497,14 @@ def files(name):
     return app.response_class(data, mimetype="image/jpeg")
 
 
+@app.route("/jump/<path:rest>")
+def jump(rest):
+    """带鉴权的 302 跳转：Safari 打开总控台原页面（noVNC 等需要 WebSocket 的场景）。"""
+    if not _authed():
+        return _denied()
+    return redirect("%s/%s" % (HUB, rest))
+
+
 # ------------------------------------------------------------------ 新插件自动发现
 # 轮询总控台 /api/cards（TOOLS 卡片清单），发现新子应用即自动注册为
 # auto-<id>.json（WebView 形态）。手工/原生插件优先：同 id 已存在则跳过。

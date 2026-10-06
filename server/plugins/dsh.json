@@ -1,0 +1,25 @@
+{
+  "id": "dsh",
+  "name": "DeepSeek Harness",
+  "tag": "AI",
+  "icon": "🐋",
+  "color": "#4f46e5",
+  "desc": "DSH 面板服务管理：状态、启停、免 token 打开面板",
+  "type": "native",
+  "pages": [
+    {
+      "title": "管理",
+      "layout": [
+        {"type": "keyvalue", "title": "服务状态", "endpoint": "/proxy/api/dsh/state", "refresh": 10, "items": [
+          "$.web", "$.lan", "$.running"
+        ]},
+        {"type": "actions", "title": "操作", "actions": [
+          {"label": "启动服务", "endpoint": "/proxy/api/dsh/start", "method": "POST"},
+          {"label": "停止服务", "endpoint": "/proxy/api/dsh/stop", "method": "POST",
+           "style": "danger", "confirm": "确定停止 DeepSeek Harness 吗？"},
+          {"label": "打开 DSH 面板（Safari）", "endpoint": "/proxy/api/dsh/open", "open": true}
+        ]}
+      ]
+    }
+  ]
+}

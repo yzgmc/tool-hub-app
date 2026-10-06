@@ -19,12 +19,12 @@ App 本体是一个**服务器驱动 UI 框架**，装一次即可：
 
 **自动发现**：网关每 30 秒轮询总控台 `/api/cards`，往总控台新增任何子应用后，手机端 30 秒内自动出现对应插件（WebView 形态，`auto-<id>.json`）。手工插件优先——同 id 的手工/原生清单会覆盖自动注册。
 
-## 当前插件（15 原生 + 4 WebView）
+## 当前插件（16 原生 + 4 WebView）
 
 | 形态 | 插件 |
 |---|---|
-| 原生 | memclean 内存清理、monitor 服务器监控、port-scanner 端口巡检、trae-checkin 自动签到、wol 网络唤醒（行级一键开机）、traecode TraeCode 控制（6 按钮）、pvp-toolbox CS 战绩（战绩+对局+刷新）、qbittorrent 下载（行级暂停/恢复）、converter 格式转换（上传→进度→Safari 下载）、mctex 材质工坊（GPU 状态+画廊）、voice 语音工坊（录音/训练进度+稿件）、doc-scan 扫描王（拍照矫正+扫描画廊）、ai-agent AI 助手（原生聊天+历史）、immich-ai 相册找图（聊天+照片墙） |
-| WebView | cad 3D 建模助手（WebGL 画布，硬性限制）、zzz-cloud ZZZ 云端（noVNC 串流画面，硬性限制）、server-monitor 监控面板（自动注册）、vnc-hub VNC 聚合（自动注册，仅入口） |
+| 原生 | memclean 内存清理、monitor 服务器监控、port-scanner 端口巡检、trae-checkin 自动签到、wol 网络唤醒（行级一键开机）、traecode TraeCode 控制（6 按钮）、pvp-toolbox CS 战绩（战绩+对局+刷新）、qbittorrent 下载（行级暂停/恢复）、converter 格式转换（上传→进度→Safari 下载）、mctex 材质工坊（GPU 状态+画廊）、voice 语音工坊（录音/训练进度+稿件）、doc-scan 扫描王（拍照矫正+扫描画廊）、ai-agent AI 助手（原生聊天+历史）、immich-ai 相册找图（聊天+照片墙）、dsh DeepSeek Harness 管理（状态+启停+免token开面板）、vnc-hub VNC 聚合（三路状态+跳转浏览器，画面为 WebSocket 硬性限制） |
+| WebView | cad 3D 建模助手（WebGL 画布，硬性限制）、zzz-cloud ZZZ 云端（noVNC 串流画面，硬性限制）、server-monitor 监控面板（自动注册） |
 
 ## 目录结构
 
@@ -32,7 +32,7 @@ App 本体是一个**服务器驱动 UI 框架**，装一次即可：
 server/
   mobile_gateway.py          # 网关主程序（Flask，7072，独立于总控台进程）
   toolhub-mobile.service     # systemd 单元
-  plugins/*.json             # 19 个插件清单（15 原生 + 4 WebView），热加载
+  plugins/*.json             # 20 个插件清单（16 原生 + 4 WebView），热加载
 ios/ToolHubMobile/           # iOS 项目（XcodeGen，见其 README）
 server-ref/app.py            # 总控台源码参考副本（只读，用于分析）
 ```
