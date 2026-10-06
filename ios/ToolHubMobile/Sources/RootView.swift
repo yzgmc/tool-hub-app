@@ -48,6 +48,7 @@ struct SetupView: View {
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .textFieldStyle(.plain)
+                                .foregroundColor(Theme.ink)
                                 .padding(12)
                                 .background(RoundedRectangle(cornerRadius: 10).fill(Theme.bg))
                         }
@@ -57,6 +58,7 @@ struct SetupView: View {
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .textFieldStyle(.plain)
+                                .foregroundColor(Theme.ink)
                                 .padding(12)
                                 .background(RoundedRectangle(cornerRadius: 10).fill(Theme.bg))
                         }
@@ -80,8 +82,8 @@ struct SetupView: View {
                                 .fill(testOK ? Theme.ok : Theme.accent))
                             .foregroundColor(.white)
                         }
-                        .disabled(url.isEmpty || testing)
-                        .opacity((url.isEmpty || testing) ? 0.45 : 1.0)
+                        .disabled(testing)
+                        .opacity(testing ? 0.45 : 1.0)
 
                         Button {
                             store.saveConfig(url, token)
@@ -128,7 +130,8 @@ struct SetupView: View {
             let c = APIClient(base: url, token: token)
             guard c.isValid else {
                 testOK = false
-                testResult = "地址需以 http:// 或 https:// 开头"
+                testResult = url.trimmingCharacters(in: .whitespaces).isEmpty
+                    ? "请先填写服务器地址" : "地址需以 http:// 或 https:// 开头"
                 return
             }
             let ping = try await c.ping()
