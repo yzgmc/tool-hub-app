@@ -1,0 +1,25 @@
+{
+  "id": "qbittorrent",
+  "name": "qBittorrent 下载",
+  "tag": "下载",
+  "icon": "📥",
+  "color": "#f59e0b",
+  "desc": "BT/磁力任务列表，行级暂停/恢复，下载目录指向 AList 网盘",
+  "type": "native",
+  "pages": [
+    {
+      "title": "任务",
+      "layout": [
+        {"type": "list", "title": "下载任务", "endpoint": "/proxy/qbt/api/v2/torrents/info", "refresh": 5,
+         "listPath": "$",
+         "item": {"title": "$.name", "subtitle": "$.state", "value": "$.dlspeed", "valueUnit": "B/s",
+                  "actions": [
+                    {"label": "暂停", "endpoint": "/proxy/qbt/api/v2/torrents/pause", "method": "POST",
+                     "encoding": "form", "paramFrom": "$.hash", "paramKey": "hashes"},
+                    {"label": "恢复", "endpoint": "/proxy/qbt/api/v2/torrents/resume", "method": "POST",
+                     "encoding": "form", "paramFrom": "$.hash", "paramKey": "hashes"}
+                  ]}}
+      ]
+    }
+  ]
+}

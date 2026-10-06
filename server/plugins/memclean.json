@@ -1,0 +1,27 @@
+{
+  "id": "memclean",
+  "name": "内存清理",
+  "tag": "运维",
+  "icon": "🧹",
+  "color": "#0d9488",
+  "desc": "内存占用一览，一键清理释放内存",
+  "type": "native",
+  "pinned": true,
+  "pages": [
+    {
+      "title": "内存",
+      "layout": [
+        {"type": "stats", "endpoint": "/proxy/memclean/api/overview", "refresh": 5, "items": [
+          {"label": "内存", "value": "$.mem.percent", "unit": "%"},
+          {"label": "已用", "value": "$.mem.used_mb", "unit": "MB"},
+          {"label": "可用", "value": "$.mem.available_mb", "unit": "MB"},
+          {"label": "Swap", "value": "$.swap.used_mb", "unit": "MB"}
+        ]},
+        {"type": "gauge", "title": "内存占用（阈值 85%）", "endpoint": "/proxy/memclean/api/overview", "refresh": 5, "value": "$.mem.percent", "max": 100, "unit": "%"},
+        {"type": "actions", "title": "操作", "actions": [
+          {"label": "立即清理内存", "endpoint": "/proxy/memclean/api/clean-now", "method": "POST", "confirm": "确定要立即清理内存吗？", "style": "danger"}
+        ]}
+      ]
+    }
+  ]
+}

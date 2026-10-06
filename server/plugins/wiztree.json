@@ -1,0 +1,23 @@
+{
+  "id": "wiztree",
+  "name": "磁盘空间",
+  "tag": "运维",
+  "icon": "💽",
+  "color": "#22d3ee",
+  "desc": "分区占用一览，深度分析走网页版",
+  "type": "native",
+  "pages": [
+    {
+      "title": "磁盘",
+      "layout": [
+        {"type": "list", "title": "分区占用", "endpoint": "/proxy/wiztree/api/df", "refresh": 60, "item": {"title": "$.mount", "subtitle": "共 $.size 字节 · 已用 $.used 字节", "value": "$.pct", "valueUnit": "%"}}
+      ]
+    },
+    {
+      "title": "明细",
+      "layout": [
+        {"type": "auto", "title": "分区明细", "endpoint": "/proxy/wiztree/api/df", "refresh": 120}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "port-scanner",
+  "name": "端口巡检",
+  "tag": "巡检",
+  "icon": "🧭",
+  "color": "#a855f7",
+  "desc": "全部开放端口与网页标题一览",
+  "type": "native",
+  "pages": [
+    {
+      "title": "端口",
+      "layout": [
+        {"type": "stats", "endpoint": "/proxy/scan/api/state", "refresh": 60, "items": [
+          {"label": "端口数", "value": "$.count"},
+          {"label": "间隔", "value": "$.interval", "unit": "s"}
+        ]},
+        {"type": "list", "title": "开放端口", "endpoint": "/proxy/scan/api/state", "refresh": 60, "item": {"title": "$.port", "subtitle": "$.proc · $.title", "value": "$.scope"}}
+      ]
+    }
+  ]
+}

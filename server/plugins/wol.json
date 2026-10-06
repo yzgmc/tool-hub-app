@@ -1,0 +1,24 @@
+{
+  "id": "wol",
+  "name": "网络唤醒",
+  "tag": "运维",
+  "icon": "⚡",
+  "color": "#f43f5e",
+  "desc": "Wake-on-LAN 设备列表，一键发送魔法包唤醒",
+  "type": "native",
+  "pages": [
+    {
+      "title": "设备",
+      "layout": [
+        {"type": "list", "title": "设备列表", "endpoint": "/proxy/wol/api/devices", "refresh": 30,
+         "listPath": "$.devices",
+         "item": {"title": "$.name", "subtitle": "$.mac", "value": "$.ip",
+                  "actions": [
+                    {"label": "唤醒", "endpoint": "/proxy/wol/api/wake", "method": "POST",
+                     "paramFrom": "$.mac", "paramKey": "mac"}
+                  ]}},
+        {"type": "keyvalue", "title": "说明", "items": ["$.ok"]}
+      ]
+    }
+  ]
+}

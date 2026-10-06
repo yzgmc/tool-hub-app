@@ -1,0 +1,15 @@
+[Unit]
+Description=ToolHub Mobile Gateway (port 7072)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/tools-hub/mobile
+ExecStart=/opt/server-monitor/venv/bin/python /opt/tools-hub/mobile/mobile_gateway.py
+Restart=always
+RestartSec=3
+Environment=MOBILE_PORT=7072
+Environment=MOBILE_HUB_PORT=7070
+
+[Install]
+WantedBy=multi-user.target

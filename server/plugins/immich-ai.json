@@ -1,0 +1,21 @@
+{
+  "id": "immich-ai",
+  "name": "相册找图 AI",
+  "tag": "AI",
+  "icon": "🖼️",
+  "color": "#22c55e",
+  "desc": "用一句话找照片：AI 语义检索，结果照片墙直接浏览",
+  "type": "native",
+  "pages": [
+    {
+      "title": "找图",
+      "layout": [
+        {"type": "chat", "title": "找图对话", "endpoint": "/api/find-chat",
+         "inputField": "text", "response": "$.reply",
+         "placeholder": "描述你想找的照片…"},
+        {"type": "imagegrid", "title": "结果照片墙", "endpoint": "/api/find-cards", "refresh": 8,
+         "listPath": "$.items", "urlPath": "$.url", "titlePath": "$.title"}
+      ]
+    }
+  ]
+}

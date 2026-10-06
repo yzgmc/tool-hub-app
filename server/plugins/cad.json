@@ -1,0 +1,10 @@
+{
+  "id": "cad",
+  "name": "3D 建模助手",
+  "tag": "3D",
+  "icon": "🧊",
+  "color": "#d9a441",
+  "desc": "对话式生成参数化 3D 零件，实时渲染，导出 STL/OBJ",
+  "type": "web",
+  "url": "/proxy/cad/"
+}

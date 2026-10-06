@@ -1,0 +1,28 @@
+{
+  "id": "mctex",
+  "name": "图像生成工坊",
+  "tag": "AI",
+  "icon": "🎨",
+  "color": "#a855f7",
+  "desc": "MC 材质生成画廊与 GPU 状态，支持示例材质一键生成",
+  "type": "native",
+  "pages": [
+    {
+      "title": "画廊",
+      "layout": [
+        {"type": "stats", "title": "生成统计", "endpoint": "/proxy/mctex/api/status", "refresh": 15, "items": [
+          {"label": "已生成", "value": "$.stats.generated"},
+          {"label": "全部完成", "value": "$.stats.full_done"},
+          {"label": "显存占用", "value": "$.gpu.vram_used_gb", "unit": "GB"},
+          {"label": "显存总量", "value": "$.gpu.vram_total_gb", "unit": "GB"}
+        ]},
+        {"type": "imagegrid", "title": "材质画廊", "endpoint": "/api/mctex-gallery", "refresh": 60,
+         "listPath": "$.items", "urlPath": "$.url", "titlePath": "$.title"},
+        {"type": "actions", "title": "生成", "actions": [
+          {"label": "生成示例材质 stone", "endpoint": "/proxy/mctex/api/generate", "method": "POST",
+           "body": {"names": ["stone"]}}
+        ]}
+      ]
+    }
+  ]
+}

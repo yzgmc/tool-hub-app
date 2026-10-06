@@ -1,0 +1,35 @@
+{
+  "id": "converter",
+  "name": "格式转换器",
+  "tag": "媒体",
+  "icon": "🔄",
+  "color": "#06b6d4",
+  "desc": "手机上传视频/音频/图片，服务器转码后一键下载",
+  "type": "native",
+  "pages": [
+    {
+      "title": "转换",
+      "layout": [
+        {"type": "upload", "title": "上传文件", "endpoint": "/api/convert-upload",
+         "fileParam": "file", "placeholder": "选择要转换的文件"},
+        {"type": "progress", "title": "转换进度", "endpoint": "/api/convert-status",
+         "value": "$.pct", "status": "$.state", "refresh": 2},
+        {"type": "actions", "title": "结果", "actions": [
+          {"label": "下载转换结果", "endpoint": "/api/convert-download", "open": true}
+        ]}
+      ]
+    },
+    {
+      "title": "文件",
+      "layout": [
+        {"type": "list", "title": "待处理文件", "endpoint": "/proxy/convert/api/pending", "refresh": 30,
+         "item": {"title": "$.name", "subtitle": "$.ext", "value": "$.size",
+                  "actions": [
+                    {"label": "删除", "endpoint": "/api/convert-delete", "method": "POST",
+                     "style": "danger", "confirm": "确定删除该文件吗？",
+                     "paramFrom": "$.id", "paramKey": "id"}
+                  ]}}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "voice",
+  "name": "语音训练工坊",
+  "tag": "AI",
+  "icon": "🎙️",
+  "color": "#14b8a6",
+  "desc": "录音进度与训练状态一览，远程启动训练，查看稿件清单",
+  "type": "native",
+  "pages": [
+    {
+      "title": "训练",
+      "layout": [
+        {"type": "stats", "title": "录音进度", "endpoint": "/proxy/voice/api/state", "refresh": 10, "items": [
+          {"label": "通过轮数", "value": "$.passes"},
+          {"label": "已录/总需", "value": "$.done_takes"},
+          {"label": "有效分钟", "value": "$.good_minutes", "unit": "分"},
+          {"label": "待录条目", "value": "$.free_count"}
+        ]},
+        {"type": "progress", "title": "训练进度", "endpoint": "/proxy/voice/api/train/status",
+         "value": "$.progress", "status": "$.stage", "refresh": 3},
+        {"type": "actions", "title": "操作", "actions": [
+          {"label": "开始训练", "endpoint": "/proxy/voice/api/train/start", "method": "POST",
+           "confirm": "确定现在开始语音训练吗？"}
+        ]}
+      ]
+    },
+    {
+      "title": "稿件",
+      "layout": [
+        {"type": "list", "title": "稿件条目", "endpoint": "/proxy/voice/api/script", "refresh": 120,
+         "listPath": "$.items", "item": {"title": "$.text"}}
+      ]
+    }
+  ]
+}

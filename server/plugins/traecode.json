@@ -1,0 +1,37 @@
+{
+  "id": "traecode",
+  "name": "TraeCode 控制面板",
+  "tag": "工具",
+  "icon": "🛠️",
+  "color": "#8b5cf6",
+  "desc": "远程控制 Trae / WorkBuddy 桌面程序：启动、重启、停止",
+  "type": "native",
+  "pages": [
+    {
+      "title": "状态",
+      "layout": [
+        {"type": "stats", "title": "运行状态", "endpoint": "/proxy/trae/status", "refresh": 15, "items": [
+          {"label": "Trae", "value": "$.trae.running"},
+          {"label": "WorkBuddy", "value": "$.workbuddy.running"},
+          {"label": "Trae 版本", "value": "$.trae.version"},
+          {"label": "Buddy 版本", "value": "$.workbuddy.version"}
+        ]},
+        {"type": "keyvalue", "title": "构建号", "endpoint": "/proxy/trae/status", "refresh": 30, "items": [
+          "$.trae.build", "$.workbuddy.build"
+        ]},
+        {"type": "actions", "title": "Trae", "actions": [
+          {"label": "启动", "endpoint": "/proxy/trae/trae-start", "method": "POST"},
+          {"label": "重启", "endpoint": "/proxy/trae/trae-restart", "method": "POST"},
+          {"label": "停止", "endpoint": "/proxy/trae/trae-stop", "method": "POST", "style": "danger",
+           "confirm": "确定要停止 Trae 吗？"}
+        ]},
+        {"type": "actions", "title": "WorkBuddy", "actions": [
+          {"label": "启动", "endpoint": "/proxy/trae/workbuddy-start", "method": "POST"},
+          {"label": "重启", "endpoint": "/proxy/trae/workbuddy-restart", "method": "POST"},
+          {"label": "停止", "endpoint": "/proxy/trae/workbuddy-stop", "method": "POST", "style": "danger",
+           "confirm": "确定要停止 WorkBuddy 吗？"}
+        ]}
+      ]
+    }
+  ]
+}

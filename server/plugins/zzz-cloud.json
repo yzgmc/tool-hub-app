@@ -1,0 +1,10 @@
+{
+  "id": "zzz-cloud",
+  "name": "ZZZ 云端控制台",
+  "tag": "工具",
+  "icon": "🎮",
+  "color": "#38bdf8",
+  "desc": "Windows 程序云端串流桌面，远程启动绝区零/一条龙助手",
+  "type": "web",
+  "url": "/proxy/zzz/"
+}

@@ -1,0 +1,51 @@
+name: iOS Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths: ["ios/**", ".github/workflows/ios-build.yml"]
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios/ToolHubMobile
+        run: xcodegen
+
+      - name: Build (unsigned, device)
+        working-directory: ios/ToolHubMobile
+        run: |
+          set -o pipefail
+          xcodebuild -project ToolHubMobile.xcodeproj \
+            -scheme ToolHub \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            | tail -40
+
+      - name: Package unsigned IPA
+        run: |
+          APP="ios/ToolHubMobile/build/Build/Products/Release-iphoneos/ToolHub.app"
+          test -d "$APP" || { echo "App bundle not found"; exit 1; }
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qry ToolHub-unsigned.ipa Payload
+          rm -rf Payload
+          ls -lh ToolHub-unsigned.ipa
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ToolHub-unsigned-ipa
+          path: ToolHub-unsigned.ipa
+          retention-days: 30

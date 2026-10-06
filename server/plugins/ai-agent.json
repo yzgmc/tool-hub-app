@@ -1,0 +1,20 @@
+{
+  "id": "ai-agent",
+  "name": "AI 服务器助手",
+  "tag": "AI",
+  "icon": "🤖",
+  "color": "#3b82f6",
+  "desc": "对话式控制服务器：执行命令、SSH 远程、联网搜索，手机端原生聊天",
+  "type": "native",
+  "pages": [
+    {
+      "title": "对话",
+      "layout": [
+        {"type": "chat", "title": "AI 助手", "endpoint": "/api/ai-chat",
+         "inputField": "content", "response": "$.reply",
+         "placeholder": "向服务器 AI 提问…",
+         "history": {"endpoint": "/api/ai-history", "role": "$.role", "content": "$.content"}}
+      ]
+    }
+  ]
+}

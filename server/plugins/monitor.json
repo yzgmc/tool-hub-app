@@ -1,0 +1,26 @@
+{
+  "id": "monitor",
+  "name": "服务器监控",
+  "tag": "监测",
+  "icon": "📊",
+  "color": "#22c55e",
+  "desc": "内存/负载/磁盘/交换分区实时状态",
+  "type": "native",
+  "pinned": true,
+  "pages": [
+    {
+      "title": "实时",
+      "layout": [
+        {"type": "stats", "endpoint": "/proxy/memclean/api/overview", "refresh": 5, "items": [
+          {"label": "内存", "value": "$.mem.percent", "unit": "%"},
+          {"label": "负载", "value": "$.load1"},
+          {"label": "进程", "value": "$.proc_count"}
+        ]},
+        {"type": "gauge", "title": "内存占用", "endpoint": "/proxy/memclean/api/overview", "refresh": 5, "value": "$.mem.percent", "max": 100, "unit": "%"},
+        {"type": "chart", "title": "内存曲线", "endpoint": "/proxy/memclean/api/overview", "refresh": 5, "value": "$.mem.percent", "history": 120},
+        {"type": "list", "title": "磁盘分区", "endpoint": "/proxy/wiztree/api/df", "refresh": 60, "item": {"title": "$.mount", "subtitle": "$.src", "value": "$.pct", "valueUnit": "%"}},
+        {"type": "auto", "title": "原始数据", "endpoint": "/proxy/memclean/api/overview", "refresh": 30}
+      ]
+    }
+  ]
+}

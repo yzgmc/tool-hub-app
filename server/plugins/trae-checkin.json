@@ -1,0 +1,23 @@
+{
+  "id": "trae-checkin",
+  "name": "TraeCode 签到",
+  "tag": "工具",
+  "icon": "⚡",
+  "color": "#f59e0b",
+  "desc": "每日自动领 Trial Code 积分，可手动触发",
+  "type": "native",
+  "pages": [
+    {
+      "title": "签到",
+      "layout": [
+        {"type": "keyvalue", "title": "当前状态", "endpoint": "/proxy/checkin/api/state", "refresh": 10, "items": [
+          "$.state", "$.step", "$.progress", "$.busy",
+          "$.config.enabled", "$.config.time", "$.config.last_auto_date", "$.last_error"
+        ]},
+        {"type": "actions", "title": "操作", "actions": [
+          {"label": "立即签到一次", "endpoint": "/proxy/checkin/api/run", "method": "POST", "confirm": "确定现在执行一次自动签到流程吗？"}
+        ]}
+      ]
+    }
+  ]
+}

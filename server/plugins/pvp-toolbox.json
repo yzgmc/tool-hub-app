@@ -1,0 +1,38 @@
+{
+  "id": "pvp-toolbox",
+  "name": "CS 战绩工具箱",
+  "tag": "游戏",
+  "icon": "🎯",
+  "color": "#ef4444",
+  "desc": "CS2 战绩总览、最近对局与数据刷新",
+  "type": "native",
+  "pages": [
+    {
+      "title": "战绩",
+      "layout": [
+        {"type": "stats", "title": "总览", "endpoint": "/proxy/pvp/api/summary", "refresh": 60, "items": [
+          {"label": "总场次", "value": "$.total"},
+          {"label": "胜率", "value": "$.win_rate"},
+          {"label": "K/D", "value": "$.kd"},
+          {"label": "KDA", "value": "$.kda"},
+          {"label": "总击杀", "value": "$.kills"},
+          {"label": "平均评分", "value": "$.avg_rating"}
+        ]},
+        {"type": "list", "title": "最近对局", "endpoint": "/proxy/pvp/api/matches?limit=10", "refresh": 60,
+         "item": {"title": "$.map", "subtitle": "$.mode", "value": "$.score"}}
+      ]
+    },
+    {
+      "title": "账号",
+      "layout": [
+        {"type": "keyvalue", "title": "账号信息", "endpoint": "/proxy/pvp/api/status", "refresh": 60, "items": [
+          "$.nickname", "$.steam_id", "$.matches", "$.demo_archive", "$.details_localized"
+        ]},
+        {"type": "actions", "title": "数据刷新", "actions": [
+          {"label": "刷新战绩列表", "endpoint": "/proxy/pvp/api/matches/refresh", "method": "POST"},
+          {"label": "刷新对局详情", "endpoint": "/proxy/pvp/api/matches/details/refresh", "method": "POST"}
+        ]}
+      ]
+    }
+  ]
+}

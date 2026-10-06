@@ -1,0 +1,21 @@
+{
+  "id": "doc-scan",
+  "name": "全能扫描王",
+  "tag": "扫描",
+  "icon": "📄",
+  "color": "#0ea5e9",
+  "desc": "拍照上传自动矫正增强，扫描结果画廊随时回看",
+  "type": "native",
+  "pages": [
+    {
+      "title": "扫描",
+      "layout": [
+        {"type": "upload", "title": "拍照/选图扫描", "endpoint": "/api/scan-upload",
+         "accept": "image", "fileParam": "file",
+         "fields": {"ai": "1", "clean": "1", "mode": "scan", "page": "auto"}},
+        {"type": "imagegrid", "title": "最近扫描", "endpoint": "/api/scans", "refresh": 15,
+         "listPath": "$.items", "urlPath": "$.url", "titlePath": "$.title"}
+      ]
+    }
+  ]
+}

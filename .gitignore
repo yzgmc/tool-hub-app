@@ -1,0 +1,17 @@
+# 构建产物
+build/
+DerivedData/
+*.ipa
+Payload/
+
+# macOS / Xcode
+.DS_Store
+*.xcodeproj
+xcuserdata/
+
+# 密钥与敏感文件（绝不入库）
+token.txt
+*.pem
+*.p12
+*.mobileprovision
+.env
