@@ -81,6 +81,7 @@ struct SetupView: View {
                             .foregroundColor(.white)
                         }
                         .disabled(url.isEmpty || testing)
+                        .opacity((url.isEmpty || testing) ? 0.45 : 1.0)
 
                         Button {
                             store.saveConfig(url, token)
@@ -90,10 +91,17 @@ struct SetupView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding(14)
                                 .background(RoundedRectangle(cornerRadius: 12)
-                                    .fill(Theme.ink.opacity(testOK ? 1 : 0.35)))
+                                    .fill(Theme.ink))
                                 .foregroundColor(.white)
                         }
-                        .disabled(!testOK)
+                        .disabled(testing)
+                        .opacity(testing ? 0.45 : 1.0)
+
+                        if testResult != nil && !testOK {
+                            Text("测试未通过也可以直接保存，进入后可在设置里继续调试。")
+                                .font(.caption2)
+                                .foregroundColor(Theme.sub)
+                        }
                     }
                     .padding(20)
                     .background(RoundedRectangle(cornerRadius: 16).fill(Theme.card)
