@@ -78,7 +78,7 @@ struct DashboardView: View {
     private func servicesCard(_ o: Overview) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             sectionTitle("外部服务")
-            let sids = (o.services?.states ?? []).sorted { $0.key < $1.key }
+            let sids = (o.services?.states ?? [:]).sorted { $0.key < $1.key }
             if sids.isEmpty {
                 Text("暂无数据").font(.footnote).foregroundColor(Theme.sub)
             }

@@ -13,7 +13,7 @@ struct ServicesView: View {
             ScrollView {
                 VStack(spacing: 12) {
                     if let o = overview {
-                        let sids = (o.services?.states ?? []).sorted { $0.key < $1.key }
+                        let sids = (o.services?.states ?? [:]).sorted { $0.key < $1.key }
                         Text("共 \(o.services?.total ?? sids.count) 个服务 · \(o.services?.controllable ?? 0) 个可控")
                             .font(.caption).foregroundColor(Theme.sub)
                             .frame(maxWidth: .infinity, alignment: .leading)

@@ -5,7 +5,7 @@ import Foundation
 // 都不影响解析，任何一层出错都不该让整个 App 崩溃。
 // ---------------------------------------------------------------------------
 
-struct Manifest: Decodable {
+struct Manifest: Codable {
     var version: Int?
     var name: String?
     var plugins: [Plugin]?
@@ -16,7 +16,7 @@ struct Manifest: Decodable {
     }
 }
 
-struct Plugin: Decodable, Identifiable {
+struct Plugin: Codable, Identifiable {
     var id: String
     var name: String?
     var tag: String?
@@ -33,7 +33,7 @@ struct Plugin: Decodable, Identifiable {
     var displayIcon: String { icon ?? "🧩" }
 }
 
-struct PluginPage: Decodable {
+struct PluginPage: Codable {
     var title: String?
     var layout: [WidgetSpec]?
 }
@@ -42,7 +42,7 @@ struct PluginPage: Decodable {
 // Widget 声明
 // ---------------------------------------------------------------------------
 
-struct WidgetSpec: Decodable {
+struct WidgetSpec: Codable {
     var type: String          // stats | gauge | chart | list | keyvalue | auto | actions
                               // | chat | upload | imagegrid | progress
     var title: String?
@@ -111,7 +111,7 @@ struct WidgetSpec: Decodable {
 
 /// stats 的 items 是对象、keyvalue 的 items 是字符串，用同一字段名——
 /// 用 FlexItem 兼容两种形态。
-enum FlexItem: Decodable {
+enum FlexItem: Codable {
     case path(String)
     case stat(StatItem)
 
@@ -123,15 +123,23 @@ enum FlexItem: Decodable {
             self = .stat(try c.decode(StatItem.self))
         }
     }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.singleValueContainer()
+        switch self {
+        case .path(let s): try c.encode(s)
+        case .stat(let s): try c.encode(s)
+        }
+    }
 }
 
-struct StatItem: Decodable {
+struct StatItem: Codable {
     var label: String?
     var value: String?
     var unit: String?
 }
 
-struct ListItemSpec: Decodable {
+struct ListItemSpec: Codable {
     var title: String?
     var subtitle: String?
     var value: String?
@@ -140,13 +148,13 @@ struct ListItemSpec: Decodable {
 }
 
 /// chat 组件的历史记录接口配置
-struct ChatHistory: Decodable {
+struct ChatHistory: Codable {
     var endpoint: String?    // 历史拉取地址（GET）
     var role: String?        // 角色字段路径
     var content: String?     // 内容字段路径
 }
 
-struct ActionSpec: Decodable {
+struct ActionSpec: Codable {
     var label: String?
     var endpoint: String?
     var method: String?
