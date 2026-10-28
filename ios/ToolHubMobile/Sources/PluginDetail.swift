@@ -118,6 +118,8 @@ struct NativeWidget: View {
             if loading && data == .null && kind != "actions" { ProgressView("正在获取…").font(.footnote) }
             if kind == "notice" {
                 Label(spec["text"].text, systemImage: "info.circle").font(.subheadline).foregroundStyle(.secondary)
+            } else if kind == "remote" {
+                NativeRemote(spec: spec)
             } else if kind == "image" {
                 RemoteImage(path: NativeBinding.endpoint(spec["endpoint"].text, row: context, fields: fields))
             } else if kind == "stats" {
@@ -187,6 +189,8 @@ struct NativeWidget: View {
                     HStack { actionButtons }
                     VStack(alignment: .leading) { actionButtons }
                 }
+            } else if kind == "recorder" {
+                NativeRecorder(spec: spec)
             } else if kind == "upload" {
                 NativeUpload(spec: spec) { refreshResult in feedback = refreshResult }
             } else if kind == "imagegrid" {
@@ -306,7 +310,7 @@ struct NativeWidget: View {
     @MainActor func load() async {
         if spec["endpoint"].text.isEmpty && spec["loadEndpoint"].text.isEmpty { data = context; return }
         let endpoint = kind == "form" ? spec["loadEndpoint"].text : spec["endpoint"].text
-        guard !["image", "upload", "chat", "actions", "notice"].contains(kind), !endpoint.isEmpty else { return }
+        guard !["remote", "recorder", "image", "upload", "chat", "actions", "notice"].contains(kind), !endpoint.isEmpty else { return }
         loading = true
         defer { loading = false }
         do {
@@ -325,7 +329,7 @@ struct NativeWidget: View {
         for field in spec["fields"].array {
             let v = NativeBinding.fieldValue(field, row: source, values: values)
             if let message = NativeBinding.validation(field, value: v) { error = message; return }
-            
+
             values[field["name"].text] = v
         }
         fields = values
@@ -342,7 +346,8 @@ struct NativeWidget: View {
         var endpoint = NativeBinding.endpoint(spec["endpoint"].text, row: source, fields: values)
         if spec["method"].text.uppercased() == "GET" {
             var parts = URLComponents(string: endpoint)
-            parts?.queryItems = (parts?.queryItems ?? []) + body.map { URLQueryItem(name: $0.key, value: $0.value.text) }
+            let query = (parts?.queryItems ?? []) + body.map { URLQueryItem(name: $0.key, value: $0.value.text) }
+            parts?.queryItems = query
             endpoint = parts?.string ?? endpoint; action.removeValue(forKey: "body")
         }
         action["endpoint"] = .string(endpoint)
@@ -363,4 +368,3 @@ struct NativeWidget: View {
         }
     }
 }
-
