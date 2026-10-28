@@ -37,6 +37,19 @@ indirect enum JSON: Codable, Equatable {
     }
     var bool: Bool { self == .bool(true) }
     var number: Double { if case .number(let n) = self { return n }; return Double(text) ?? 0 }
+    func render(_ template: String, fallback: String = "—") -> String {
+        if template == "$" { return text.isEmpty ? fallback : text }
+        guard let regex = try? NSRegularExpression(pattern: #"\$\.[A-Za-z0-9_\.\[\]-]+"#) else { return fallback }
+        let matches = regex.matches(in: template, range: NSRange(template.startIndex..., in: template))
+        if matches.isEmpty { return template.isEmpty ? fallback : template }
+        var result = template
+        for match in matches.reversed() {
+            guard let range = Range(match.range, in: result) else { continue }
+            let resolved = value(at: String(result[range])).text
+            result.replaceSubrange(range, with: resolved.isEmpty ? fallback : resolved)
+        }
+        return result
+    }
     func value(at path: String) -> JSON {
         if path == "$" || path.isEmpty { return self }
         guard path.hasPrefix("$.") else { return .string(path) }

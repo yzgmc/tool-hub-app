@@ -75,7 +75,9 @@ struct HubAPI {
         r.setValue("application/json", forHTTPHeaderField: "Accept")
         if path.hasPrefix("/proxy/phone/ios12/") { r.setValue("1", forHTTPHeaderField: "X-WDA-Control") }
         if path.hasPrefix("/proxy/ddns/") { r.setValue("1", forHTTPHeaderField: "X-DDNS-Request") }
-        if let body, r.httpMethod != "GET" {
+        r.timeoutInterval = r.httpMethod == "GET" ? 25 : 180
+        if r.httpMethod != "GET" && r.httpMethod != "HEAD" {
+            let body = body ?? .object([:])
             if form {
                 var c = URLComponents(); c.queryItems = body.object.map { URLQueryItem(name: $0.key, value: $0.value.text) }
                 r.httpBody = c.percentEncodedQuery?.data(using: .utf8)
@@ -139,7 +141,8 @@ struct HubAPI {
     func download(_ path: String) async throws -> URL {
         let (data, http) = try await raw(request(path))
         let ext = http.mimeType == "image/png" ? "png" : http.mimeType == "image/jpeg" ? "jpg" : "dat"
-        let file = FileManager.default.temporaryDirectory.appendingPathComponent("ToolHub-\(UUID().uuidString).\(ext)")
+        let suggested = http.suggestedFilename.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "Result.\(ext)"
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("ToolHub-\(UUID().uuidString)-\(suggested)")
         try data.write(to: file, options: .atomic)
         return file
     }

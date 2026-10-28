@@ -9,6 +9,18 @@ final class ToolHubTests: XCTestCase {
         XCTAssertEqual(value.value(at: "$.data.items.100.name"), .null)
         XCTAssertTrue(value.value(at: "$.data.ready").bool)
     }
+    func testInlineFieldsRenderAsUserFacingText() {
+        let value: JSON = .object(["size": .number(100), "used": .number(25)])
+        XCTAssertEqual(value.render("共 $.size 字节 · 已用 $.used 字节"), "共 100 字节 · 已用 25 字节")
+        XCTAssertEqual(value.render("$.missing"), "—")
+    }
+    func testEmptyPostStillSendsJSONForProtectedAPIs() throws {
+        let api = HubAPI(connection: Connection(server: "https://example.com", token: ""))
+        let request = try api.request("/proxy/ddns/api/v1/update", method: "POST")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "X-DDNS-Request"), "1")
+        XCTAssertEqual(request.httpBody, Data("{}".utf8))
+    }
     func testJSONRoundTripPreservesFormsAndComponents() throws {
         let source = Data(#"{"type":"form","fields":[{"name":"title","default":"hello"}],"count":42,"enabled":false}"#.utf8)
         let value = try JSONDecoder().decode(JSON.self, from: source)
@@ -23,7 +35,7 @@ final class ToolHubTests: XCTestCase {
     }
     func testGatewayRejectsExternalOrTraversalEndpoints() {
         let api = HubAPI(connection: Connection(server: "https://example.com", token: ""))
-        for path in ["https://evil.example/api", "//evil.example/api", "/proxy/../admin", "/proxy\\evil"] {
+        for path in ["https://evil.example/api", "//evil.example/api", "/proxy/../admin", "/proxy/%2e%2e/admin", "/proxy\\evil"] {
             XCTAssertThrowsError(try api.url(path), path)
         }
     }

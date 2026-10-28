@@ -125,11 +125,13 @@ struct NativeWidget: View {
                     }
                 }
             } else if kind == "gauge" || kind == "progress" {
-                let value = data.value(at: spec["value"].text).number
+                let metric = data.value(at: spec["value"].text)
+                let value = metric.number
                 let maximum = spec["max"].number > 0 ? spec["max"].number : 100
-                ProgressView(value: min(max(value, 0), maximum), total: maximum) {
+                if metric == .null { Text("暂无数据").font(.subheadline).foregroundStyle(.secondary) }
+                else { ProgressView(value: min(max(value, 0), maximum), total: maximum) {
                     Text(spec["status"].text.isEmpty ? "当前使用" : display(spec["status"].text)).font(.subheadline).foregroundStyle(.secondary)
-                } currentValueLabel: { Text(String(format: "%.1f", value) + spec["unit"].text).monospacedDigit() }
+                } currentValueLabel: { Text(String(format: "%.1f", value) + spec["unit"].text).monospacedDigit() } }
             } else if kind == "chart" {
                 if samples.isEmpty { Text("等待数据…").foregroundStyle(.secondary) }
                 Chart(samples) { sample in
@@ -249,8 +251,7 @@ struct NativeWidget: View {
     }
     func display(_ path: String, in row: JSON? = nil, fallback: String = "—") -> String {
         guard !path.isEmpty else { return fallback }
-        let value = (row ?? data).value(at: path).text
-        return value.isEmpty ? fallback : value
+        return (row ?? data).render(path, fallback: fallback)
     }
     func actionButton(_ action: JSON, row: JSON) -> some View {
         Button(action["label"].text.isEmpty ? "执行" : action["label"].text) { chooseAction(action, row: row) }
@@ -293,7 +294,7 @@ struct NativeWidget: View {
             let next = try await store.api.json(spec["endpoint"].text)
             guard !Task.isCancelled else { return }
             data = next; error = nil
-            if kind == "chart" {
+            if kind == "chart" && next.value(at: spec["value"].text) != .null {
                 samples.append(Sample(value: next.value(at: spec["value"].text).number))
                 if samples.count > 60 { samples.removeFirst() }
             }

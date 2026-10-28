@@ -35,15 +35,6 @@ jobs:
             -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
             -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" \
             | tee "$RUNNER_TEMP/toolhub-build.log" | tail -70
-      - name: Test native models and API boundaries
-        working-directory: ios/ToolHubMobile
-        run: |
-          set -o pipefail
-          SIMULATOR=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith("iPhone")))')
-          xcodebuild test -project ToolHubMobile.xcodeproj -scheme ToolHub \
-            -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR" \
-            -derivedDataPath build-tests CODE_SIGNING_ALLOWED=NO \
-            | tee -a "$RUNNER_TEMP/toolhub-build.log" | tail -60
       - name: Package unsigned IPA
         run: |
           APP="ios/ToolHubMobile/build/Build/Products/Release-iphoneos/ToolHub.app"
@@ -60,6 +51,16 @@ jobs:
             ToolHub-unsigned.ipa
             ToolHub-unsigned.ipa.sha256
           retention-days: 14
+      - name: Test native models and API boundaries
+        working-directory: ios/ToolHubMobile
+        run: |
+          set -o pipefail
+          SIMULATOR=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for key in sorted(d,reverse=True) for x in d[key] if "iOS" in key and x["name"].startswith("iPhone")))')
+          xcodebuild test -project ToolHubMobile.xcodeproj -scheme ToolHub \
+            -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR" \
+            -parallel-testing-enabled NO -destination-timeout 60 \
+            -derivedDataPath build-tests CODE_SIGNING_ALLOWED=NO \
+            | tee -a "$RUNNER_TEMP/toolhub-build.log" | tail -60
       - name: Upload build diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
