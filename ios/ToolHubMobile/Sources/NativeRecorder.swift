@@ -13,7 +13,7 @@ import AVFoundation
         guard allowed else { error = "请在系统设置中允许 ToolHub 使用麦克风。"; return }
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetoothHFP])
+            try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
             try session.setActive(true)
             let path = FileManager.default.temporaryDirectory.appendingPathComponent("Recording-\(UUID().uuidString).m4a")
             recorder = try AVAudioRecorder(url: path, settings: [AVFormatIDKey: Int(kAudioFormatMPEG4AAC), AVSampleRateKey: 48000, AVNumberOfChannelsKey: 1, AVEncoderBitRateKey: 192000])

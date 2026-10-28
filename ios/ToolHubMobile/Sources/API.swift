@@ -81,7 +81,7 @@ struct HubAPI {
         if r.httpMethod != "GET" && r.httpMethod != "HEAD" {
             let body = body ?? .object([:])
             if form {
-                var c = URLComponents(); c.queryItems = body.object.map { URLQueryItem(name: $0.key, value: $0.value.text) }
+                var c = URLComponents(); c.queryItems = body.object.map { URLQueryItem(name: $0.key, value: $0.value.wireText) }
                 r.httpBody = c.percentEncodedQuery?.data(using: .utf8)
                 r.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
             } else {
@@ -105,6 +105,7 @@ struct HubAPI {
     func json(_ path: String, method: String = "GET", body: JSON? = nil, form: Bool = false) async throws -> JSON {
         let (data, _) = try await raw(request(path, method: method, body: body, form: form))
         if data.isEmpty { return .object([:]) }
+        if String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) == "Ok." { return .object([:]) }
         guard let result = try? JSONDecoder().decode(JSON.self, from: data) else {
             throw HubFailure(message: "此接口没有返回 JSON，请更新插件的原生 API 配置。")
         }
@@ -132,7 +133,7 @@ struct HubAPI {
             var body = Data()
             func append(_ text: String) { body.append(Data(text.utf8)) }
             for (key, value) in spec["fields"].object {
-                append("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(key)\"\r\n\r\n\(value.text)\r\n")
+                append("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(key)\"\r\n\r\n\(value.wireText)\r\n")
             }
             let fileKey = spec["fileParam"].text.isEmpty ? "file" : spec["fileParam"].text
             let safeName = name.replacingOccurrences(of: "\"", with: "").replacingOccurrences(of: "\r", with: "").replacingOccurrences(of: "\n", with: "")

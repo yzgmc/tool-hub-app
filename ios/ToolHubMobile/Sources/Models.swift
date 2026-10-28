@@ -35,6 +35,11 @@ indirect enum JSON: Codable, Equatable {
         case .object: return ""
         }
     }
+    var wireText: String {
+        if case .bool(let value) = self { return value ? "true" : "false" }
+        if case .array = self, let data = try? JSONEncoder().encode(self) { return String(data: data, encoding: .utf8) ?? "" }
+        return text
+    }
     var bool: Bool { self == .bool(true) }
     var number: Double { if case .number(let n) = self { return n }; return Double(text) ?? 0 }
     func render(_ template: String, fallback: String = "—") -> String {

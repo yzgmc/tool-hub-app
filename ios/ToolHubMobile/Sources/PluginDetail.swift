@@ -90,6 +90,7 @@ struct NativeWidget: View {
     @EnvironmentObject var store: HubStore
     @Environment(\.scenePhase) var phase
     @State private var data: JSON = .null
+    @State private var visibleLimit = 100
     @State private var busy = false
     @State private var loading = false
     @State private var error: String?
@@ -118,6 +119,8 @@ struct NativeWidget: View {
             if loading && data == .null && kind != "actions" { ProgressView("正在获取…").font(.footnote) }
             if kind == "notice" {
                 Label(spec["text"].text, systemImage: "info.circle").font(.subheadline).foregroundStyle(.secondary)
+            } else if kind == "collection" {
+                NativeCollection(spec: spec, context: context)
             } else if kind == "remote" {
                 NativeRemote(spec: spec)
             } else if kind == "image" {
@@ -147,7 +150,7 @@ struct NativeWidget: View {
                 }.frame(height: 160).accessibilityLabel(title.isEmpty ? "实时曲线" : title)
             } else if kind == "list" {
                 if rows.isEmpty && !loading { Text("暂无数据").font(.subheadline).foregroundStyle(.secondary) }
-                ForEach(Array(rows.prefix(100).enumerated()), id: \.offset) { index, row in
+                ForEach(Array(rows.prefix(visibleLimit).enumerated()), id: \.offset) { index, row in
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(alignment: .top, spacing: 12) {
                             VStack(alignment: .leading, spacing: 5) {
@@ -174,9 +177,9 @@ struct NativeWidget: View {
                             }
                         }
                     }.padding(.vertical, 6)
-                    if index < min(rows.count, 100) - 1 { Divider() }
+                    if index < min(rows.count, visibleLimit) - 1 { Divider() }
                 }
-                if rows.count > 100 { Text("已显示前 100 项").font(.caption).foregroundStyle(.secondary) }
+                if rows.count > visibleLimit { Button("显示更多（还有 \(rows.count - visibleLimit) 项）") { visibleLimit += 100 }.frame(minHeight: 44) }
             } else if kind == "keyvalue" || kind == "auto" {
                 if !spec["items"].array.isEmpty {
                     ForEach(Array(spec["items"].array.enumerated()), id: \.offset) { _, item in
@@ -310,7 +313,7 @@ struct NativeWidget: View {
     @MainActor func load() async {
         if spec["endpoint"].text.isEmpty && spec["loadEndpoint"].text.isEmpty { data = context; return }
         let endpoint = kind == "form" ? spec["loadEndpoint"].text : spec["endpoint"].text
-        guard !["remote", "recorder", "image", "upload", "chat", "actions", "notice"].contains(kind), !endpoint.isEmpty else { return }
+        guard !["collection", "remote", "recorder", "image", "upload", "chat", "actions", "notice"].contains(kind), !endpoint.isEmpty else { return }
         loading = true
         defer { loading = false }
         do {
@@ -346,7 +349,7 @@ struct NativeWidget: View {
         var endpoint = NativeBinding.endpoint(spec["endpoint"].text, row: source, fields: values)
         if spec["method"].text.uppercased() == "GET" {
             var parts = URLComponents(string: endpoint)
-            let query = (parts?.queryItems ?? []) + body.map { URLQueryItem(name: $0.key, value: $0.value.text) }
+            let query = (parts?.queryItems ?? []) + body.map { URLQueryItem(name: $0.key, value: $0.value.wireText) }
             parts?.queryItems = query
             endpoint = parts?.string ?? endpoint; action.removeValue(forKey: "body")
         }
@@ -360,7 +363,9 @@ struct NativeWidget: View {
         Task {
             do {
                 let input = spec["inputField"].text.isEmpty ? "content" : spec["inputField"].text
-                let result = try await store.api.json(spec["endpoint"].text, method: "POST", body: .object([input: .string(message)]))
+                var payload = NativeBinding.value(spec["body"], row: context, fields: fields).object
+                payload[input] = .string(message)
+                let result = try await store.api.json(spec["endpoint"].text, method: "POST", body: .object(payload))
                 let reply = result.value(at: spec["response"].text.isEmpty ? "$.reply" : spec["response"].text).text
                 messages.append(ChatLine(text: reply.isEmpty ? "服务器未返回文字回复。" : reply, user: false))
             } catch { self.error = error.localizedDescription; text = message }
