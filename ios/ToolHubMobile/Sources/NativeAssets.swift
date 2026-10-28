@@ -57,8 +57,8 @@ struct NativeGallery: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Button { selected = asset } label: {
                                 VStack(alignment: .leading, spacing: 8) {
-                                    if ["image", "video", "model"].contains(asset.kind) { RemoteImage(path: asset.preview) }
-                                    else { Image(systemName: asset.kind == "audio" ? "waveform" : "doc.richtext").font(.largeTitle).frame(maxWidth: .infinity, minHeight: 100).background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 12)) }
+                                    if asset.kind == "image" || asset.kind == "model" || (asset.kind == "video" && asset.preview != asset.download) { RemoteImage(path: asset.preview) }
+                                    else { Image(systemName: asset.kind == "audio" ? "waveform" : (asset.kind == "video" ? "play.rectangle" : "doc.richtext")).font(.largeTitle).frame(maxWidth: .infinity, minHeight: 100).background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 12)) }
                                     Text(asset.title).font(.subheadline).lineLimit(3).frame(maxWidth: .infinity, alignment: .leading)
                                 }
                             }.buttonStyle(.plain).accessibilityLabel("预览：" + asset.title)
@@ -119,7 +119,7 @@ struct NativeAssetDetail: View {
             }.navigationTitle("成果预览").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
                 .task(id: asset.id) {
-                    do { preview = try await store.api.download(asset.preview) }
+                    do { let file = try await store.api.download(asset.preview, filename: asset.preview == asset.download ? asset.filename : ""); preview = file; if asset.preview == asset.download { original = file } }
                     catch { if !Task.isCancelled { self.error = "预览暂不可用，仍可尝试下载原文件。" } }
                 }
                 .sheet(item: $shared) { ShareSheet(items: [$0.url]) }
