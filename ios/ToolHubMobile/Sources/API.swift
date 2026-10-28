@@ -147,12 +147,28 @@ struct HubAPI {
         if result.object.keys.contains("data") && result.object.keys.contains("error") { return result["data"] }
         return result
     }
-    func download(_ path: String) async throws -> URL {
-        let (data, http) = try await raw(request(path))
-        let ext = http.mimeType == "image/png" ? "png" : http.mimeType == "image/jpeg" ? "jpg" : "dat"
-        let suggested = http.suggestedFilename.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "Result.\(ext)"
-        let file = FileManager.default.temporaryDirectory.appendingPathComponent("ToolHub-\(UUID().uuidString)-\(suggested)")
-        try data.write(to: file, options: .atomic)
-        return file
+    func download(_ path: String, filename: String = "") async throws -> URL {
+        var request = try request(path)
+        request.setValue("*/*", forHTTPHeaderField: "Accept")
+        let (temporary, response) = try await Self.session.download(for: request)
+        guard let http = response as? HTTPURLResponse else { throw HubFailure(message: "文件服务器未返回有效响应。") }
+        guard (200..<300).contains(http.statusCode) else {
+            try? FileManager.default.removeItem(at: temporary)
+            throw HubFailure(message: http.statusCode == 401 ? "连接令牌无效，请重新连接。" : "文件下载失败（HTTP \(http.statusCode)），请确认成果已经生成。")
+        }
+        let mime = http.mimeType ?? ""
+        if mime.contains("text/html") || mime.contains("application/json") && !path.contains("export") && !path.contains(".json") {
+            try? FileManager.default.removeItem(at: temporary)
+            throw HubFailure(message: "服务器返回了页面或错误数据，未获得成果文件。")
+        }
+        let extensions = ["image/png":"png", "image/jpeg":"jpg", "image/heic":"heic", "image/webp":"webp", "application/pdf":"pdf", "audio/wav":"wav", "audio/x-wav":"wav", "audio/mp4":"m4a", "video/mp4":"mp4", "application/zip":"zip"]
+        var suggested = filename.isEmpty ? (http.suggestedFilename ?? "Result") : filename
+        suggested = URL(fileURLWithPath: suggested).lastPathComponent.replacingOccurrences(of: "\r", with: "").replacingOccurrences(of: "\n", with: "")
+        if URL(fileURLWithPath: suggested).pathExtension.isEmpty, let ext = extensions[mime] { suggested += "." + ext }
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("ToolHub-" + UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let destination = directory.appendingPathComponent(suggested.isEmpty ? "Result" : suggested)
+        try FileManager.default.moveItem(at: temporary, to: destination)
+        return destination
     }
 }

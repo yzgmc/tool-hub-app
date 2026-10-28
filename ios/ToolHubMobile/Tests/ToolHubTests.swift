@@ -65,4 +65,20 @@ final class ToolHubTests: XCTestCase {
         XCTAssertEqual(NativeDisplay.text(.string("running"), field: .object(["format": .string("status")])), "运行中")
         XCTAssertEqual(NativeDisplay.text(.null, field: .null), "暂无数据")
     }
+    func testResultAssetsKeepOriginalDownloadSeparateFromPreview() throws {
+        let row = try JSONDecoder().decode(JSON.self, from: Data(#"{"id":"photo","title":"照片","url":"/api/preview/photo","download":"/api/original/photo","filename":"Photo.heic","kind":"image"}"#.utf8))
+        let asset = try XCTUnwrap(NativeAsset.parse(row))
+        XCTAssertEqual(asset.preview, "/api/preview/photo")
+        XCTAssertEqual(asset.download, "/api/original/photo")
+        XCTAssertEqual(asset.filename, "Photo.heic")
+        XCTAssertNil(NativeAsset.parse(.object(["url": .string("https://other.example/photo")])) )
+    }
+    func testSearchResultsBuildPhotoAndVideoDownloadTemplates() throws {
+        let spec: JSON = .object(["urlTemplate": .string("/api/v1/native/photos/{{id}}/preview"), "downloadTemplate": .string("/api/v1/native/photos/{{id}}/original"), "titlePath": .string("$.name")])
+        let row: JSON = .object(["id": .string("abc"), "name": .string("Video.mp4"), "type": .string("VIDEO")])
+        let asset = try XCTUnwrap(NativeAsset.parse(row, spec: spec))
+        XCTAssertEqual(asset.download, "/api/v1/native/photos/abc/original")
+        XCTAssertEqual(asset.kind, "video")
+        XCTAssertEqual(asset.filename, "Video.mp4")
+    }
 }

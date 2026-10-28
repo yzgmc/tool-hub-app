@@ -102,6 +102,7 @@ struct NativeWidget: View {
     @State private var fields: [String: JSON] = [:]
     @State private var record: NativeRecord?
     @State private var actionResult: JSON = .null
+    @State private var chatAssets: [JSON] = []
     @State private var shared: SharedFile?
     var kind: String { spec["type"].text }
     var title: String { spec["title"].text }
@@ -196,17 +197,8 @@ struct NativeWidget: View {
                 NativeRecorder(spec: spec)
             } else if kind == "upload" {
                 NativeUpload(spec: spec) { refreshResult in feedback = refreshResult }
-            } else if kind == "imagegrid" {
-                if rows.isEmpty && !loading { Text("还没有图片").foregroundStyle(.secondary).font(.subheadline) }
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 120))], spacing: 10) {
-                    ForEach(Array(rows.prefix(60).enumerated()), id: \.offset) { _, row in
-                        VStack(alignment: .leading, spacing: 5) {
-                            RemoteImage(path: row.value(at: spec["urlPath"].text.isEmpty ? "$.url" : spec["urlPath"].text).text)
-                            Text(row.value(at: spec["titlePath"].text.isEmpty ? "$.title" : spec["titlePath"].text).text)
-                                .font(.caption).lineLimit(2)
-                        }
-                    }
-                }
+            } else if kind == "imagegrid" || kind == "gallery" {
+                NativeGallery(rows: rows, spec: spec)
             } else if kind == "chat" {
                 ForEach(messages) { message in
                     Text(message.text).font(.body).textSelection(.enabled).padding(12)
@@ -217,6 +209,7 @@ struct NativeWidget: View {
                     .lineLimit(2...6).textFieldStyle(.roundedBorder).accessibilityLabel("消息内容")
                 Button { sendMessage() } label: { Label(busy ? "正在回复…" : "发送", systemImage: "arrow.up.circle.fill") }
                     .buttonStyle(.borderedProminent).frame(minHeight: 44).disabled(busy || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                if !chatAssets.isEmpty { NativeGallery(rows: chatAssets, spec: .null) }
             } else if kind == "form" {
                 NativeFields(definitions: spec["fields"].array, source: data == .null ? context : data, values: $fields)
                 Button(spec["submitLabel"].text.isEmpty ? "保存" : spec["submitLabel"].text) { submitForm() }
@@ -327,6 +320,7 @@ struct NativeWidget: View {
         } catch { if !Task.isCancelled { self.error = error.localizedDescription } }
     }
     func submitForm() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         var values = fields
         let source = data == .null ? context : data
         for field in spec["fields"].array {
@@ -366,6 +360,7 @@ struct NativeWidget: View {
                 var payload = NativeBinding.value(spec["body"], row: context, fields: fields).object
                 payload[input] = .string(message)
                 let result = try await store.api.json(spec["endpoint"].text, method: "POST", body: .object(payload))
+                chatAssets = result["items"].array
                 let reply = result.value(at: spec["response"].text.isEmpty ? "$.reply" : spec["response"].text).text
                 messages.append(ChatLine(text: reply.isEmpty ? "服务器未返回文字回复。" : reply, user: false))
             } catch { self.error = error.localizedDescription; text = message }
