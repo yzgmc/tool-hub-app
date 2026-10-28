@@ -57,7 +57,8 @@ struct HubAPI {
               base.user == nil, base.password == nil, base.query == nil, base.fragment == nil,
               path.hasPrefix("/"), !path.hasPrefix("//"), !path.contains("\\"),
               !path.components(separatedBy: "/").contains(".."),
-              let relative = URLComponents(string: path), relative.host == nil, relative.scheme == nil else {
+              let relative = URLComponents(string: path), relative.host == nil, relative.scheme == nil,
+              !relative.path.components(separatedBy: "/").contains("..") else {
             throw HubFailure(message: "请输入有效的服务器地址，例如 https://hub.example.com。")
         }
         base.path = base.path.trimmingCharacters(in: CharacterSet(charactersIn: "/")).isEmpty ? "" : "/" + base.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
@@ -72,6 +73,8 @@ struct HubAPI {
         r.httpMethod = method.uppercased()
         r.setValue(connection.token, forHTTPHeaderField: "X-ToolHub-Token")
         r.setValue("application/json", forHTTPHeaderField: "Accept")
+        if path.hasPrefix("/proxy/phone/ios12/") { r.setValue("1", forHTTPHeaderField: "X-WDA-Control") }
+        if path.hasPrefix("/proxy/ddns/") { r.setValue("1", forHTTPHeaderField: "X-DDNS-Request") }
         if let body, r.httpMethod != "GET" {
             if form {
                 var c = URLComponents(); c.queryItems = body.object.map { URLQueryItem(name: $0.key, value: $0.value.text) }
@@ -116,13 +119,6 @@ struct HubAPI {
     }
     func upload(_ spec: JSON, data: Data, name: String, mime: String) async throws -> JSON {
         var request = try request(spec["endpoint"].text, method: "POST")
-        if spec["endpoint"].text == "/api/scan-upload" {
-            request.httpBody = data
-            request.setValue(mime, forHTTPHeaderField: "Content-Type")
-            if let meta = String(data: try JSONEncoder().encode(spec["fields"]), encoding: .utf8) {
-                request.setValue(meta, forHTTPHeaderField: "X-Scan-Meta")
-            }
-        } else {
             let boundary = UUID().uuidString
             var body = Data()
             func append(_ text: String) { body.append(Data(text.utf8)) }
@@ -135,7 +131,6 @@ struct HubAPI {
             body.append(data); append("\r\n--\(boundary)--\r\n")
             request.httpBody = body
             request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        }
         let (data, _) = try await raw(request)
         let result = try JSONDecoder().decode(JSON.self, from: data)
         if result["ok"] == .bool(false) { throw HubFailure(message: result["msg"].text) }
