@@ -81,4 +81,11 @@ final class ToolHubTests: XCTestCase {
         XCTAssertEqual(asset.kind, "video")
         XCTAssertEqual(asset.filename, "Video.mp4")
     }
+    func testDynamicMultiSelectionSubmitsFileNamesInsteadOfEntireRecords() {
+        let field: JSON = .object(["valuePath": .string("$.filename")])
+        let option: JSON = .object(["filename": .string("scan-second.jpg"), "title": .string("第二页"), "url": .string("/files/scan-second.jpg")])
+        XCTAssertEqual(NativeBinding.selectionValue(option, field: field), .string("scan-second.jpg"))
+        XCTAssertEqual(NativeBinding.selectionValue(.object(["value": .string("device")]), field: .null), .string("device"))
+    }
+
 }

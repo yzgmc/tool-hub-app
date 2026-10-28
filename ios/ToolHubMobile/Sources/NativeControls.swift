@@ -26,6 +26,13 @@ enum NativeBinding {
         default: return input
         }
     }
+    static func selectionValue(_ option: JSON, field: JSON) -> JSON {
+        let value: JSON
+        if !field["valuePath"].text.isEmpty { value = option.value(at: field["valuePath"].text) }
+        else { value = option["value"] == .null ? option : option["value"] }
+        if field["valueType"].text == "integer", let number = Double(value.text) { return .number(number) }
+        return value
+    }
     static func fieldValue(_ field: JSON, row: JSON, values: [String: JSON]) -> JSON {
         if let v = values[field["name"].text] { return v }
         if !field["from"].text.isEmpty { let v = row.value(at: field["from"].text); if v != .null { return v } }
@@ -85,11 +92,12 @@ struct NativeField: View {
             } else if field["type"].text == "multiselect" {
                 Text(field["label"].text).font(.subheadline)
                 ForEach(Array(options.enumerated()), id: \.offset) { _, option in
-                    Toggle(optionLabel(option), isOn: Binding(get: { current.array.contains(option["value"] == .null ? option : option["value"]) }, set: { selected in
-                        let v = option["value"] == .null ? option : option["value"]
+                    Toggle(optionLabel(option), isOn: Binding(get: { current.array.contains(NativeBinding.selectionValue(option, field: field)) }, set: { selected in
+                        let v = NativeBinding.selectionValue(option, field: field)
                         var list = current.array.filter { $0 != v }; if selected { list.append(v) }; values[key] = .array(list)
                     })).font(.subheadline).frame(minHeight: 44)
                 }
+                if let optionError { Text(optionError).font(.caption).foregroundStyle(.orange) }
             } else {
                 Text(field["label"].text + (field["required"].bool ? " *" : "")).font(.subheadline)
                 if field["type"].text == "secret" { SecureField(field["placeholder"].text, text: text).textFieldStyle(.roundedBorder) }
