@@ -86,6 +86,7 @@ struct ChatLine: Identifiable { let id = UUID(); let text: String; let user: Boo
 struct NativeWidget: View {
     let spec: JSON
     let refreshID: UUID
+    var context: JSON = .null
     @EnvironmentObject var store: HubStore
     @Environment(\.scenePhase) var phase
     @State private var data: JSON = .null
@@ -97,7 +98,9 @@ struct NativeWidget: View {
     @State private var pendingAction: JSON?
     @State private var text = ""
     @State private var messages: [ChatLine] = []
-    @State private var fields: [String: String] = [:]
+    @State private var fields: [String: JSON] = [:]
+    @State private var record: NativeRecord?
+    @State private var actionResult: JSON = .null
     @State private var shared: SharedFile?
     var kind: String { spec["type"].text }
     var title: String { spec["title"].text }
@@ -115,6 +118,8 @@ struct NativeWidget: View {
             if loading && data == .null && kind != "actions" { ProgressView("正在获取…").font(.footnote) }
             if kind == "notice" {
                 Label(spec["text"].text, systemImage: "info.circle").font(.subheadline).foregroundStyle(.secondary)
+            } else if kind == "image" {
+                RemoteImage(path: NativeBinding.endpoint(spec["endpoint"].text, row: context, fields: fields))
             } else if kind == "stats" {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), alignment: .leading)], alignment: .leading, spacing: 20) {
                     ForEach(Array(spec["items"].array.enumerated()), id: \.offset) { _, item in
@@ -154,6 +159,11 @@ struct NativeWidget: View {
                                 Text(display(spec["item"]["value"].text, in: row) + spec["item"]["valueUnit"].text).font(.subheadline).foregroundStyle(.secondary)
                             }
                         }
+                        if !spec["item"]["detail"].array.isEmpty {
+                            Button("查看详情与操作", systemImage: "chevron.right") {
+                                record = NativeRecord(title: display(spec["item"]["title"].text, in: row), source: row, layout: spec["item"]["detail"].array)
+                            }.frame(minHeight: 44)
+                        }
                         if !spec["item"]["actions"].array.isEmpty {
                             HStack {
                                 ForEach(Array(spec["item"]["actions"].array.enumerated()), id: \.offset) { _, action in
@@ -168,10 +178,10 @@ struct NativeWidget: View {
             } else if kind == "keyvalue" || kind == "auto" {
                 if !spec["items"].array.isEmpty {
                     ForEach(Array(spec["items"].array.enumerated()), id: \.offset) { _, item in
-                        if case .object = item { LabeledContent(item["label"].text, value: display(item["value"].text)) }
+                        if case .object = item { LabeledContent(item["label"].text, value: NativeDisplay.text(data.value(at: item["value"].text), field: item)) }
                         else { LabeledContent(item.text.replacingOccurrences(of: "$.", with: ""), value: display(item.text)) }
                     }
-                } else { JSONTree(value: data) }
+                } else { Text("此页面尚未完成业务展示配置。").font(.subheadline).foregroundStyle(.secondary) }
             } else if kind == "actions" {
                 ViewThatFits(in: .horizontal) {
                     HStack { actionButtons }
@@ -201,25 +211,13 @@ struct NativeWidget: View {
                 Button { sendMessage() } label: { Label(busy ? "正在回复…" : "发送", systemImage: "arrow.up.circle.fill") }
                     .buttonStyle(.borderedProminent).frame(minHeight: 44).disabled(busy || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             } else if kind == "form" {
-                ForEach(Array(spec["fields"].array.enumerated()), id: \.offset) { _, field in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(field["label"].text).font(.subheadline)
-                        TextField(field["placeholder"].text, text: Binding(get: { fields[field["name"].text] ?? field["default"].text }, set: { fields[field["name"].text] = $0 }))
-                            .textFieldStyle(.roundedBorder).accessibilityLabel(field["label"].text)
-                    }
-                }
-                Button(spec["submitLabel"].text.isEmpty ? "提交" : spec["submitLabel"].text) {
-                    var body = spec["body"].object
-                    for field in spec["fields"].array {
-                        let key = field["name"].text
-                        body[key] = .string(fields[key] ?? field["default"].text)
-                    }
-                    var action = spec.object; action["body"] = .object(body)
-                    chooseAction(.object(action), row: .null)
-                }.buttonStyle(.borderedProminent).frame(minHeight: 44).disabled(busy)
+                NativeFields(definitions: spec["fields"].array, source: data == .null ? context : data, values: $fields)
+                Button(spec["submitLabel"].text.isEmpty ? "保存" : spec["submitLabel"].text) { submitForm() }
+                    .buttonStyle(.borderedProminent).frame(minHeight: 44).disabled(busy)
             } else { Label("此组件需要更新 App 才能使用。", systemImage: "app.badge").foregroundStyle(.secondary) }
             if busy && kind != "chat" { ProgressView("正在执行…") }
             if let feedback { Label(feedback, systemImage: "checkmark.circle").font(.subheadline).textSelection(.enabled) }
+            if actionResult != .null { NativeResult(value: actionResult, definitions: spec["resultItems"].array) }
             if let error {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(error, systemImage: "exclamationmark.circle").font(.subheadline).foregroundStyle(.orange)
@@ -244,7 +242,9 @@ struct NativeWidget: View {
                 }
                 Button("取消", role: .cancel) { pendingAction = nil }
             } message: { Text(pendingAction?["confirm"].text.isEmpty == false ? pendingAction!["confirm"].text : "此操作会更改服务器上的数据或服务状态。") }
+            .onChange(of: spec) { _, _ in Task { await load() } }
             .sheet(item: $shared) { file in ShareSheet(items: [file.url]) }
+            .sheet(item: $record, onDismiss: { Task { await load() } }) { NativeRecordView(record: $0) }
     }
     @ViewBuilder var actionButtons: some View {
         ForEach(Array(spec["actions"].array.enumerated()), id: \.offset) { _, action in actionButton(action, row: .null) }
@@ -258,7 +258,12 @@ struct NativeWidget: View {
             .buttonStyle(.bordered).tint(action["style"].text == "danger" ? .red : .blue).frame(minHeight: 44).disabled(busy)
     }
     func chooseAction(_ action: JSON, row: JSON) {
-        var next = action.object
+        var next = NativeBinding.value(action, row: row == .null ? context : row, fields: fields).object
+        if !action["fields"].array.isEmpty {
+            var form = next; form["type"] = .string("form"); form["submitLabel"] = action["label"]
+            record = NativeRecord(title: action["label"].text, source: row, layout: [.object(form)])
+            return
+        }
         if !action["paramFrom"].text.isEmpty {
             var body = action["body"].object
             body[action["paramKey"].text] = row.value(at: action["paramFrom"].text)
@@ -278,7 +283,19 @@ struct NativeWidget: View {
                     let result = try await store.api.json(action["endpoint"].text,
                         method: action["method"].text.isEmpty ? "POST" : action["method"].text,
                         body: action["body"] == .null ? nil : action["body"], form: action["encoding"].text == "form")
-                    feedback = result["msg"].text.isEmpty ? "操作已完成" : result["msg"].text
+                    actionResult = result
+                    let message = [result["message"].text, result["msg"].text, result["note"].text].first { !$0.isEmpty }
+                    feedback = message ?? "操作已完成"
+                    if !action["resultLayout"].array.isEmpty {
+                        record = NativeRecord(title: action["label"].text.isEmpty ? title : action["label"].text, source: result, layout: action["resultLayout"].array)
+                    } else if !action["resultItems"].array.isEmpty {
+                        record = NativeRecord(title: action["label"].text.isEmpty ? "操作结果" : action["label"].text,
+                            source: result, layout: [.object(["type": .string("keyvalue"), "title": .string("结果"), "items": action["resultItems"]])])
+                    }
+                    if !action["downloadFrom"].text.isEmpty {
+                        let path = NativeBinding.endpoint(action["downloadFrom"].text, row: result, fields: fields)
+                        shared = SharedFile(url: try await store.api.download(path))
+                    }
                 }
                 store.log(action["label"].text.isEmpty ? title : action["label"].text, detail: feedback ?? "已完成", success: true)
                 await load()
@@ -287,11 +304,13 @@ struct NativeWidget: View {
         }
     }
     @MainActor func load() async {
-        guard !["form", "upload", "chat", "actions", "notice"].contains(kind), !spec["endpoint"].text.isEmpty else { return }
+        if spec["endpoint"].text.isEmpty && spec["loadEndpoint"].text.isEmpty { data = context; return }
+        let endpoint = kind == "form" ? spec["loadEndpoint"].text : spec["endpoint"].text
+        guard !["image", "upload", "chat", "actions", "notice"].contains(kind), !endpoint.isEmpty else { return }
         loading = true
         defer { loading = false }
         do {
-            let next = try await store.api.json(spec["endpoint"].text)
+            let next = try await store.api.json(endpoint)
             guard !Task.isCancelled else { return }
             data = next; error = nil
             if kind == "chart" && next.value(at: spec["value"].text) != .null {
@@ -299,6 +318,35 @@ struct NativeWidget: View {
                 if samples.count > 60 { samples.removeFirst() }
             }
         } catch { if !Task.isCancelled { self.error = error.localizedDescription } }
+    }
+    func submitForm() {
+        var values = fields
+        let source = data == .null ? context : data
+        for field in spec["fields"].array {
+            let v = NativeBinding.fieldValue(field, row: source, values: values)
+            if let message = NativeBinding.validation(field, value: v) { error = message; return }
+            
+            values[field["name"].text] = v
+        }
+        fields = values
+        var action = NativeBinding.value(spec, row: source, fields: values).object
+        action.removeValue(forKey: "fields")
+        var body = action["body"]?.object ?? [:]
+        if !spec["bodyOnly"].bool {
+            for (key, value) in values {
+                if spec["fields"].array.contains(where: { $0["name"].text == key && $0["type"].text == "secret" }) && value.text.isEmpty { continue }
+                body[key] = value
+            }
+        }
+        action["body"] = .object(body)
+        var endpoint = NativeBinding.endpoint(spec["endpoint"].text, row: source, fields: values)
+        if spec["method"].text.uppercased() == "GET" {
+            var parts = URLComponents(string: endpoint)
+            parts?.queryItems = (parts?.queryItems ?? []) + body.map { URLQueryItem(name: $0.key, value: $0.value.text) }
+            endpoint = parts?.string ?? endpoint; action.removeValue(forKey: "body")
+        }
+        action["endpoint"] = .string(endpoint)
+        chooseAction(.object(action), row: source)
     }
     func sendMessage() {
         let message = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -316,21 +364,3 @@ struct NativeWidget: View {
     }
 }
 
-struct JSONTree: View {
-    let value: JSON
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if case .object(let fields) = value {
-                ForEach(fields.keys.sorted(), id: \.self) { key in
-                    if let item = fields[key] {
-                        if case .object = item { DisclosureGroup(key) { JSONTree(value: item) } }
-                        else if case .array = item { DisclosureGroup(key) { JSONTree(value: item) } }
-                        else { LabeledContent(key, value: item.text.isEmpty ? "—" : item.text).font(.subheadline) }
-                    }
-                }
-            } else if case .array(let rows) = value {
-                ForEach(Array(rows.prefix(100).enumerated()), id: \.offset) { _, row in JSONTree(value: row) }
-            } else { Text(value.text.isEmpty ? "暂无数据" : value.text).font(.subheadline).textSelection(.enabled) }
-        }
-    }
-}

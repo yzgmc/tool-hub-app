@@ -116,7 +116,7 @@ struct LibraryView: View {
                     } else {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 280 : 154), spacing: 12)], spacing: 12) {
                             ForEach(filtered) { plugin in
-                                NavigationLink(value: plugin) { PluginCard(plugin: plugin) }
+                                NavigationLink(value: plugin.id) { PluginCard(plugin: plugin) }
                                     .buttonStyle(.plain)
                                     .contextMenu { Button(store.favorites.contains(plugin.id) ? "取消收藏" : "收藏", systemImage: "star") { store.toggleFavorite(plugin.id) } }
                             }
@@ -136,8 +136,9 @@ struct LibraryView: View {
                     }.disabled(store.loading || !store.configured).accessibilityLabel("刷新工具")
                 }
             }
-            .navigationDestination(for: Plugin.self) { plugin in
-                PluginDetailView(plugin: store.plugins.first(where: { $0.id == plugin.id }) ?? plugin)
+            .navigationDestination(for: String.self) { id in
+                if let plugin = store.plugins.first(where: { $0.id == id }) { PluginDetailView(plugin: plugin) }
+                else { ContentUnavailableView("工具已移除", systemImage: "square.grid.2x2", description: Text("返回目录查看最新工具。")) }
             }
         }
     }

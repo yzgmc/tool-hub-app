@@ -45,4 +45,24 @@ final class ToolHubTests: XCTestCase {
         XCTAssertEqual(catalog.plugins.first?.id, "never-compiled-before")
         XCTAssertEqual(catalog.plugins.first?.pages.first?.layout.first?["type"].text, "stats")
     }
+    func testBindingsPreserveTypesAndEncodePathParameters() {
+        let row: JSON = .object(["id": .string("a/b&c"), "count": .number(4)])
+        XCTAssertEqual(NativeBinding.endpoint("/proxy/test/{{id}}", row: row, fields: [:]), "/proxy/test/a%2Fb%26c")
+        let value = NativeBinding.value(.object(["enabled": .string("$field.enabled"), "count": .string("$row.count")]), row: row, fields: ["enabled": .bool(true)])
+        XCTAssertEqual(value["enabled"], .bool(true))
+        XCTAssertEqual(value["count"], .number(4))
+        XCTAssertEqual(NativeBinding.value(.string("$field.input"), row: row, fields: [:]), .string("$field.input"))
+    }
+    func testFormDefaultsAndValidationAvoidEmptyOrInvalidRequests() {
+        let field: JSON = .object(["name": .string("watts"), "label": .string("功耗"), "type": .string("integer"), "required": .bool(true), "from": .string("$.missing"), "default": .number(150), "min": .number(50), "max": .number(250)])
+        XCTAssertEqual(NativeBinding.fieldValue(field, row: .null, values: [:]), .number(150))
+        XCTAssertNil(NativeBinding.validation(field, value: .number(150)))
+        XCTAssertNotNil(NativeBinding.validation(field, value: .number(999)))
+        XCTAssertNotNil(NativeBinding.validation(field, value: .number(150.5)))
+        XCTAssertNotNil(NativeBinding.validation(field, value: .string("")))
+    }
+    func testHumanReadableStatusDoesNotDumpObjects() {
+        XCTAssertEqual(NativeDisplay.text(.string("running"), field: .object(["format": .string("status")])), "运行中")
+        XCTAssertEqual(NativeDisplay.text(.null, field: .null), "暂无数据")
+    }
 }

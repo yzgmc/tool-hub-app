@@ -74,6 +74,8 @@ struct HubAPI {
         r.setValue(connection.token, forHTTPHeaderField: "X-ToolHub-Token")
         r.setValue("application/json", forHTTPHeaderField: "Accept")
         if path.hasPrefix("/proxy/phone/ios12/") { r.setValue("1", forHTTPHeaderField: "X-WDA-Control") }
+        if path.hasPrefix("/proxy/quota/") { r.setValue("1", forHTTPHeaderField: "X-Quota-Request") }
+        if path.hasPrefix("/proxy/wechat/") { r.setValue("1", forHTTPHeaderField: "X-Wechat-Manage") }
         if path.hasPrefix("/proxy/ddns/") { r.setValue("1", forHTTPHeaderField: "X-DDNS-Request") }
         r.timeoutInterval = r.httpMethod == "GET" ? 25 : 180
         if r.httpMethod != "GET" && r.httpMethod != "HEAD" {
@@ -95,7 +97,7 @@ struct HubAPI {
         if http.statusCode == 401 { throw HubFailure(message: "连接令牌无效，请在设置中重新填写。") }
         guard (200..<300).contains(http.statusCode) else {
             let json = try? JSONDecoder().decode(JSON.self, from: data)
-            let detail = json?["error"]["message"].text ?? ""
+            let detail = [json?["error"]["message"].text, json?["error"].text, json?["message"].text, json?["msg"].text, json?["detail"].text].compactMap { $0 }.first { !$0.isEmpty } ?? ""
             throw HubFailure(message: detail.isEmpty ? "请求失败（HTTP \(http.statusCode)），请重试。" : detail)
         }
         return (data, http)
@@ -107,7 +109,7 @@ struct HubAPI {
             throw HubFailure(message: "此接口没有返回 JSON，请更新插件的原生 API 配置。")
         }
         if result["ok"] == .bool(false) {
-            let message = result["error"]["message"].text.isEmpty ? result["msg"].text : result["error"]["message"].text
+            let message = [result["error"]["message"].text, result["error"].text, result["message"].text, result["msg"].text, result["detail"].text].first { !$0.isEmpty } ?? ""
             throw HubFailure(message: message.isEmpty ? "服务器未能完成操作。" : message)
         }
         if result.object.keys.contains("data") && result.object.keys.contains("error") { return result["data"] }
@@ -121,6 +123,11 @@ struct HubAPI {
     }
     func upload(_ spec: JSON, data: Data, name: String, mime: String) async throws -> JSON {
         var request = try request(spec["endpoint"].text, method: "POST")
+        if spec["encoding"].text == "raw" {
+            request.httpBody = data; request.setValue(mime, forHTTPHeaderField: "Content-Type")
+            let (response, _) = try await raw(request)
+            return try JSONDecoder().decode(JSON.self, from: response)
+        }
             let boundary = UUID().uuidString
             var body = Data()
             func append(_ text: String) { body.append(Data(text.utf8)) }
@@ -135,7 +142,8 @@ struct HubAPI {
             request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         let (data, _) = try await raw(request)
         let result = try JSONDecoder().decode(JSON.self, from: data)
-        if result["ok"] == .bool(false) { throw HubFailure(message: result["msg"].text) }
+        if result["ok"] == .bool(false) { throw HubFailure(message: result["msg"].text.isEmpty ? result["error"].text : result["msg"].text) }
+        if result.object.keys.contains("data") && result.object.keys.contains("error") { return result["data"] }
         return result
     }
     func download(_ path: String) async throws -> URL {

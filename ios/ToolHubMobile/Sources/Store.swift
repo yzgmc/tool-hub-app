@@ -51,7 +51,7 @@ struct ActivityEntry: Identifiable {
             do { overview = try await client.json("/api/v1/overview") }
             catch { self.error = "工具目录已同步，服务状态暂不可用。" }
         } catch {
-            if generation == ticket { self.error = error.localizedDescription }
+            if generation == ticket && !Task.isCancelled && (error as? URLError)?.code != .cancelled { self.error = error.localizedDescription }
         }
     }
     func online(_ plugin: Plugin) -> Bool? {

@@ -33,6 +33,8 @@ struct NativeUpload: View {
     var completion: (String) -> Void
     @EnvironmentObject var store: HubStore
     @State private var photo: PhotosPickerItem?
+    @State private var fields: [String: JSON] = [:]
+    @State private var result: JSON = .null
     @State private var camera = false
     @State private var importer = false
     @State private var selectedData: Data?
@@ -43,6 +45,7 @@ struct NativeUpload: View {
     @State private var error: String?
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            NativeFields(definitions: spec["inputs"].array, values: $fields)
             if let preview { Image(uiImage: preview).resizable().scaledToFit().frame(maxHeight: 220).clipShape(RoundedRectangle(cornerRadius: 14)).accessibilityLabel("待上传图片预览") }
             ViewThatFits(in: .horizontal) {
                 HStack { mediaButtons }
@@ -54,6 +57,7 @@ struct NativeUpload: View {
                     .buttonStyle(.borderedProminent).disabled(busy).frame(minHeight: 44)
             }
             if busy { ProgressView() }
+            if result != .null { NativeResult(value: result, definitions: spec["resultItems"].array) }
             if let error { Text(error).font(.subheadline).foregroundStyle(.orange) }
         }
         .sheet(isPresented: $camera) { CameraCapture { image in
@@ -104,7 +108,18 @@ struct NativeUpload: View {
         busy = true; error = nil
         Task {
             do {
-                _ = try await store.api.upload(spec, data: data, name: filename, mime: mime)
+                var values = fields
+                for field in spec["inputs"].array {
+                    let value = NativeBinding.fieldValue(field, row: .null, values: values)
+                    if let message = NativeBinding.validation(field, value: value) { throw HubFailure(message: message) }
+                    values[field["name"].text] = value
+                }
+                var resolved = NativeBinding.value(spec, row: .null, fields: values).object
+                var uploadFields = spec["fields"].object
+                for (key, value) in values { uploadFields[key] = value }
+                resolved["fields"] = .object(uploadFields)
+                resolved["endpoint"] = .string(NativeBinding.endpoint(spec["endpoint"].text, row: .null, fields: values))
+                result = try await store.api.upload(.object(resolved), data: data, name: filename, mime: mime)
                 completion("上传成功，下拉刷新查看处理结果。")
                 store.log(spec["title"].text, detail: "文件已上传", success: true)
                 selectedData = nil; preview = nil; photo = nil
