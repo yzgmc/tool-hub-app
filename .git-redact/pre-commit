@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Blocks any commit whose staged content still holds a live credential.
+#
+# Runs before every commit and inspects the index (not the working tree), so
+# a credential can never sneak into a git object even if a filter rule was
+# missed.  Patterns are read from .git-redact/patterns.json plus every
+# literal in the local vault - no secret is ever stored in this script.
+set -uo pipefail
+
+REPO="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 1
+cd "$REPO" || exit 1
+
+PY="$(command -v python3 || true)"
+if [ -z "$PY" ]; then
+  echo "pre-commit: python3 not found, cannot verify staged content" >&2
+  exit 1
+fi
+
+exec "$PY" "$REPO/.git-redact/redact.py" guard

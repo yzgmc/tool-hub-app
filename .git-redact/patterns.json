@@ -1,0 +1,42 @@
+[
+  {
+    "name": "private_key_block",
+    "re": "-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----[\\s\\S]*?-----END [A-Z0-9 ]*PRIVATE KEY-----",
+    "ph": "__REDACTED_PRIVATE_KEY__"
+  },
+  {
+    "name": "github_pat",
+    "re": "github_pat_[A-Za-z0-9_]{20,}",
+    "ph": "__REDACTED_GITHUB_PAT__"
+  },
+  {
+    "name": "github_token",
+    "re": "gh[pousr]_[A-Za-z0-9]{20,}",
+    "ph": "__REDACTED_GITHUB_TOKEN__"
+  },
+  {
+    "name": "freellmapi_key",
+    "re": "freellmapi-[0-9a-f]{30,}",
+    "ph": "__REDACTED_FREELLMAPI_KEY__"
+  },
+  {
+    "name": "llm_api_key",
+    "re": "sk-[A-Za-z0-9_-]{20,}",
+    "ph": "__REDACTED_LLM_API_KEY__"
+  },
+  {
+    "name": "huggingface_token",
+    "re": "hf_[A-Za-z0-9]{30,}",
+    "ph": "__REDACTED_HF_TOKEN__"
+  },
+  {
+    "name": "slack_token",
+    "re": "xox[baprs]-[A-Za-z0-9-]{10,}",
+    "ph": "__REDACTED_SLACK_TOKEN__"
+  },
+  {
+    "name": "aws_access_key",
+    "re": "AKIA[0-9A-Z]{16}",
+    "ph": "__REDACTED_AWS_ACCESS_KEY__"
+  }
+]

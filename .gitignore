@@ -15,3 +15,13 @@ token.txt
 *.p12
 *.mobileprovision
 .env
+
+.git-redact/vault.json
+.git-redact/*.log
+*.key
+*.pfx
+*.sqlite*
+*.log
+.env.*
+__pycache__/
+Support/Info.plist

@@ -2,7 +2,7 @@ name: ToolHubMobile
 options:
   bundleIdPrefix: com.yxp
   deploymentTarget:
-    iOS: "16.0"
+    iOS: "17.0"
   createIntermediateGroups: true
 settings:
   base:
@@ -18,8 +18,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.yxp.toolhub
-        MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "2.0.0"
+        CURRENT_PROJECT_VERSION: "2"
         TARGETED_DEVICE_FAMILY: "1"
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
     info:
@@ -29,7 +29,33 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
-        UIUserInterfaceStyle: Light
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSLocalNetworkUsageDescription: 连接你选择的服务器，获取工具并执行操作。
+        NSCameraUsageDescription: 拍摄需要发送给扫描或图像工具的照片。
+        CFBundleURLTypes:
+          - CFBundleURLName: com.yxp.toolhub.connect
+            CFBundleURLSchemes: [toolhub]
         NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
           NSAllowsArbitraryLoads: true
         ITSAppUsesNonExemptEncryption: false
+
+  ToolHubTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: ToolHub
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  ToolHub:
+    build:
+      targets:
+        ToolHub: all
+    test:
+      targets:
+        - ToolHubTests

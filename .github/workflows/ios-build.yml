@@ -1,51 +1,66 @@
 name: iOS Build
-
 on:
   workflow_dispatch:
   push:
-    branches: [main, master]
+    branches: [main]
     paths: ["ios/**", ".github/workflows/ios-build.yml"]
-
+permissions:
+  contents: read
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: macos-15
+    timeout-minutes: 25
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
+      - name: Select Xcode with Liquid Glass SDK
+        run: |
+          test -d /Applications/Xcode_26.3.app
+          sudo xcode-select -s /Applications/Xcode_26.3.app
+          xcodebuild -version
       - name: Install XcodeGen
         run: brew install xcodegen
-
       - name: Generate Xcode project
         working-directory: ios/ToolHubMobile
         run: xcodegen
-
-      - name: Build (unsigned, device)
+      - name: Build native device app
         working-directory: ios/ToolHubMobile
         run: |
           set -o pipefail
-          xcodebuild -project ToolHubMobile.xcodeproj \
-            -scheme ToolHub \
-            -configuration Release \
-            -sdk iphoneos \
-            -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGN_IDENTITY="" \
-            | tail -40
-
+          xcodebuild -project ToolHubMobile.xcodeproj -scheme ToolHub \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" \
+            | tee "$RUNNER_TEMP/toolhub-build.log" | tail -70
+      - name: Test native models and API boundaries
+        working-directory: ios/ToolHubMobile
+        run: |
+          set -o pipefail
+          SIMULATOR=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith("iPhone")))')
+          xcodebuild test -project ToolHubMobile.xcodeproj -scheme ToolHub \
+            -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR" \
+            -derivedDataPath build-tests CODE_SIGNING_ALLOWED=NO \
+            | tee -a "$RUNNER_TEMP/toolhub-build.log" | tail -60
       - name: Package unsigned IPA
         run: |
           APP="ios/ToolHubMobile/build/Build/Products/Release-iphoneos/ToolHub.app"
-          test -d "$APP" || { echo "App bundle not found"; exit 1; }
+          test -d "$APP"
           mkdir -p Payload
           cp -R "$APP" Payload/
           zip -qry ToolHub-unsigned.ipa Payload
-          rm -rf Payload
-          ls -lh ToolHub-unsigned.ipa
-
-      - name: Upload artifact
+          shasum -a 256 ToolHub-unsigned.ipa > ToolHub-unsigned.ipa.sha256
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: ToolHub-unsigned-ipa
-          path: ToolHub-unsigned.ipa
-          retention-days: 30
+          path: |
+            ToolHub-unsigned.ipa
+            ToolHub-unsigned.ipa.sha256
+          retention-days: 14
+      - name: Upload build diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-diagnostics
+          path: ${{ runner.temp }}/toolhub-build.log

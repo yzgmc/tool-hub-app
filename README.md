@@ -1,109 +1,23 @@
-# ToolHub Mobile — 服务器总控台手机客户端
+# ToolHub · 原生 iPhone 客户端
 
-为局域网服务器总控台（192.168.1.15:7070）配套的手机方案：
+2.0 从头重写 SwiftUI 客户端，沿用本仓库和 iOS Build 工作流。首页展示全部工具，支持搜索、分类、收藏、即时刷新、服务启停及操作记录。没有内嵌网页。
 
-- **手机专用网关**（端口 **7072**）：聚合全部功能，插件清单（manifest）下发 + API 反向代理 + token 鉴权
-- **iOS 客户端**（`ios/ToolHubMobile/`）：SwiftUI + Anthropic 主题，适配 iPhone 12 / iPhone 15（iOS 16+）
+## 连接与动态组件
 
-## 核心机制：插件 OTA 同步
+在设置中填写手机可以访问的手机网关地址和令牌；令牌保存在本机钥匙串，不内置服务器凭据。网关源码唯一维护于 `yzgmc/tools-hub` 的 `mobile/` 和 `hub/mobile_native.py`，本仓库不再保存服务器参考副本。
 
-App 本体是一个**服务器驱动 UI 框架**，装一次即可：
+App 从 `GET /api/v1/native/manifest` 读取 schemaVersion 2 清单，并从 `/api/v1/overview` 获取服务状态；使用 `X-ToolHub-Token` 认证。刷新时服务器同步读取总控台服务目录和原生插件配置；每次进入前台及前台每 30 秒也会刷新。刷新失败保留旧目录并明确提示，新增或删除工具无需重新安装 App。
 
-1. 网关从 `/opt/tools-hub/mobile/plugins/*.json` 热加载插件清单
-2. App 每 30 秒轮询 `/api/manifest/version`，版本变化自动拉取新清单并刷新界面
-3. **新增插件 = 往 plugins 目录丢一个 JSON 文件**，不重启任何服务，手机下拉刷新（或等 30 秒）即出现，无需重新安装 App
+原生页面支持 stats、gauge、chart、list、keyvalue、auto、actions、chat、upload、imagegrid、progress、form、notice。插件以本地 API 路径配置数据与操作；尚未配置原生页面的工具仍出现在目录中，明确显示待配置，外部服务可使用真实 API 启停。原始网页不会自动转为原生功能。
 
-插件两种形态：
-- `type: "native"`：JSON 声明页面布局（stats 卡片 / gauge / chart 曲线 / list 行级操作 / keyvalue / auto / actions 按钮 / chat 对话 / upload 上传 / imagegrid 图片墙 / progress 进度），App 原生渲染，数据经 JSONPath（`$.a.b.0.c`）从任意 API 取值
-- `type: "web"`：App 内 WebView 直接打开子应用页面（走 `/proxy/<前缀>/` 反代）
+相机、系统照片选择器、文件选择器和系统分享面板用于上传与保存结果。请求不将令牌传给其他域名，不将带令牌的图片地址交给浏览器。
 
-**自动发现**：网关每 30 秒轮询总控台 `/api/cards`，往总控台新增任何子应用后，手机端 30 秒内自动出现对应插件（WebView 形态，`auto-<id>.json`）。手工插件优先——同 id 的手工/原生清单会覆盖自动注册。
+## 构建
 
-## 当前插件（16 原生 + 4 WebView）
+`ios/ToolHubMobile/project.yml` 使用 XcodeGen，最低 iOS 17。iOS 26 及更新系统采用系统 Liquid Glass 导航与玻璃操作区域；旧系统和降低透明度模式提供材质回退，跟随系统深浅色。
 
-| 形态 | 插件 |
-|---|---|
-| 原生 | memclean 内存清理、monitor 服务器监控、port-scanner 端口巡检、trae-checkin 自动签到、wol 网络唤醒（行级一键开机）、traecode TraeCode 控制（6 按钮）、pvp-toolbox CS 战绩（战绩+对局+刷新）、qbittorrent 下载（行级暂停/恢复）、converter 格式转换（上传→进度→Safari 下载）、mctex 材质工坊（GPU 状态+画廊）、voice 语音工坊（录音/训练进度+稿件）、doc-scan 扫描王（拍照矫正+扫描画廊）、ai-agent AI 助手（原生聊天+历史）、immich-ai 相册找图（聊天+照片墙）、dsh DeepSeek Harness 管理（状态+启停+免token开面板）、vnc-hub VNC 聚合（三路状态+跳转浏览器，画面为 WebSocket 硬性限制） |
-| WebView | cad 3D 建模助手（WebGL 画布，硬性限制）、zzz-cloud ZZZ 云端（noVNC 串流画面，硬性限制）、server-monitor 监控面板（自动注册） |
+运行仓库 Actions → iOS Build，或推送 ios/ 改动。工作流选择 Xcode 26.3，生成项目、编译真实设备 arm64 应用并上传未签名 IPA 和 SHA-256。下载后必须用有效开发证书与包含目标设备的描述文件在本地签名安装；不向 Actions 上传个人证书、账号、配对文件或生产令牌。
 
-## 目录结构
+## 发布规则
 
-```
-server/
-  mobile_gateway.py          # 网关主程序（Flask，7072，独立于总控台进程）
-  toolhub-mobile.service     # systemd 单元
-  plugins/*.json             # 20 个插件清单（16 原生 + 4 WebView），热加载
-ios/ToolHubMobile/           # iOS 项目（XcodeGen，见其 README）
-server-ref/app.py            # 总控台源码参考副本（只读，用于分析）
-```
-
-## 网关 API（7072）
-
-鉴权：header `X-ToolHub-Token`（token 存 `/opt/tools-hub/mobile/token.txt`，首次启动自动生成；写入 `open` 可关闭鉴权）
-
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| GET | `/api/ping` | 连接测试（无需 token） |
-| GET | `/api/manifest` | 插件清单（驱动整个 App UI） |
-| GET | `/api/manifest/version` | 清单版本号（App 轮询用） |
-| GET | `/api/overview` | 子应用健康 + 外部服务状态聚合 |
-| POST | `/api/services/<sid>/<start\|stop\|restart>` | 外部服务启停 |
-| ANY | `/proxy/<前缀>/<路径>` | 反代到总控台对应子应用 |
-| POST | `/api/ai-chat` · GET `/api/ai-history` | AI 助手：SSE 聚合为整段回复 + 会话历史 |
-| POST | `/api/find-chat` · GET `/api/find-cards` | 相册找图：SSE 聚合 + 结果照片墙 URL |
-| POST | `/api/convert-upload` · GET `/api/convert-status` · GET `/api/convert-download` · POST `/api/convert-delete` | 转换器：上传记录 fid → 进度/下载(302)/删除桥接 |
-| GET | `/api/mctex-gallery` | 已完成材质图片墙（URL 带 token 供 AsyncImage 直接加载） |
-| POST | `/api/scan-upload` · GET `/api/scans` · GET `/files/<名>` | 扫描王：JPEG+元数据头 → JSON + 本地扫描结果图库 |
-
-鉴权同时接受查询串 `?token=`（AsyncImage / Safari 打开等无法带 header 的场景）。
-
-## 服务器部署（已执行）
-
-```bash
-# 文件已就位：/opt/tools-hub/mobile/{mobile_gateway.py, plugins/*.json}
-systemctl enable --now toolhub-mobile
-systemctl status toolhub-mobile
-cat /opt/tools-hub/mobile/token.txt   # 填进手机 App
-```
-
-验证：
-
-```bash
-curl http://127.0.0.1:7072/api/ping
-curl -H "X-ToolHub-Token: $(cat /opt/tools-hub/mobile/token.txt)" http://127.0.0.1:7072/api/manifest
-```
-
-## 新增插件示例
-
-在服务器 `/opt/tools-hub/mobile/plugins/` 新建 `my-plugin.json`：
-
-```json
-{
-  "id": "my-plugin",
-  "name": "我的插件",
-  "icon": "🚀",
-  "color": "#D97757",
-  "type": "native",
-  "pages": [{
-    "title": "状态",
-    "layout": [
-      {"type": "stats", "endpoint": "/proxy/memclean/api/overview", "refresh": 10,
-       "items": [{"label": "内存", "value": "$.mem.percent", "unit": "%"}]},
-      {"type": "actions", "title": "操作", "actions": [
-        {"label": "执行", "endpoint": "/proxy/scan/api/scan", "method": "POST"}
-      ]}
-    ]
-  }]
-}
-```
-
-保存即生效。手机端 30 秒内自动出现（或下拉刷新）。
-
-## 已知事项
-
-- **VNC 桌面聚合未收录**：noVNC 需要 WebSocket 裸转发，HTTP 反代不支持，请在电脑浏览器使用 `/vnc/`（手机端仅自动注册了 WebView 入口）
-- **cad / zzz-cloud 保留 WebView**：3D 建模依赖 WebGL 实时画布、ZZZ 云端是 noVNC 游戏串流画面，均无法原生化（硬性限制），App 内 WebView 可正常使用
-- AI 助手 / 相册找图的对话在网关侧把 SSE 流聚合为整段回复（App 无流式渲染），AI 执行多轮工具时回复可能需要等待数十秒
-- 转换器下载 / mctex 画廊 / 扫描结果图片的 URL 均内嵌 token，仅限局域网使用
-- 总控台 `/monitor/api/metrics` 接口本身有 bug（`'float' object has no attribute 'bytes_recv'`），原生监控页已改用 memclean/wiztree/scan 三个接口组合
-- 网关为 HTTP 明文 + token，仅限局域网使用；若要公网暴露，请在 nginx 上加 HTTPS 反代 7072
+源码与工作流可提交；IPA、截图、账号、令牌、私钥、描述文件、设备标识及测试日志只留本机。发布前检查差异并运行 `.git-redact/redact.py guard`，不得绕过敏感检查或强推。完整旧源码及 Git 历史保留本机；真实安装测试结果另行记录，不将编译通过当成真机验收。
