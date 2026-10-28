@@ -41,16 +41,14 @@ struct RootView: View {
             ActivityView().tabItem { Label("活动", systemImage: "clock.arrow.circlepath") }.tag(1)
             SettingsView().tabItem { Label("设置", systemImage: "gearshape") }.tag(2)
         }
-        .task {
+        .task(id: phase) {
+            guard phase == .active else { return }
             if !store.configured { tab = 2 }
             await store.refresh()
             while !Task.isCancelled {
                 do { try await Task.sleep(for: .seconds(30)) } catch { break }
-                if phase == .active { await store.refresh() }
+                if !Task.isCancelled { await store.refresh() }
             }
-        }
-        .onChange(of: phase) { _, value in
-            if value == .active { Task { await store.refresh() } }
         }
         .sheet(isPresented: Binding(get: { store.pendingConnection != nil }, set: { if !$0 { store.pendingConnection = nil } })) {
             NavigationStack {

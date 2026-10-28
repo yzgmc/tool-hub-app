@@ -10,6 +10,7 @@ struct PluginDetailView: View {
     @State private var busy = false
     @State private var result: String?
     var body: some View {
+        let plugin = store.plugins.first(where: { $0.id == self.plugin.id }) ?? self.plugin
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 HStack(alignment: .top, spacing: 16) {
@@ -53,7 +54,8 @@ struct PluginDetailView: View {
                 }
                 ForEach(plugin.warnings, id: \.self) { Text($0).font(.footnote).foregroundStyle(.secondary) }
             }.padding(20)
-        }.scrollDismissesKeyboard(.interactively).background { CanvasBackground() }.navigationTitle(plugin.name).navigationBarTitleDisplayMode(.inline)
+        }.onChange(of: plugin.pages.count) { _, count in if page >= count { page = 0 } }
+            .scrollDismissesKeyboard(.interactively).background { CanvasBackground() }.navigationTitle(plugin.name).navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { store.toggleFavorite(plugin.id) } label: { Image(systemName: store.favorites.contains(plugin.id) ? "star.fill" : "star") }
