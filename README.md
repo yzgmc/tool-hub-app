@@ -8,9 +8,9 @@
 
 App 从 `GET /api/v1/native/manifest` 读取 schemaVersion 2 清单，并从 `/api/v1/overview` 获取服务状态；使用 `X-ToolHub-Token` 认证。刷新时服务器同步读取总控台服务目录和原生插件配置；每次进入前台及前台每 30 秒也会刷新。刷新失败保留旧目录并明确提示，新增或删除工具无需重新安装 App。
 
-原生页面支持 stats、gauge、chart、list、keyvalue、actions、chat、upload、imagegrid、image、remote、recorder、collection、progress、form、notice。插件以本地 API 路径配置数据与操作；尚未配置原生页面的工具仍出现在目录中，明确显示待配置，外部服务可使用真实 API 启停。原始网页不会自动转为原生功能。
+原生页面支持 stats、gauge、chart、list、keyvalue、actions、chat、upload、gallery、imagegrid、image、remote、recorder、collection、progress、form、notice。插件以本地 API 路径配置数据与操作；尚未配置原生页面的工具仍出现在目录中，明确显示待配置，外部服务可使用真实 API 启停。原始网页不会自动转为原生功能。
 
-相机、系统照片选择器、文件选择器和系统分享面板用于上传与保存结果。请求不将令牌传给其他域名，不将带令牌的图片地址交给浏览器。
+相机、系统照片选择器、文件选择器和系统分享面板用于上传与保存结果。统一成果卡片支持原生放大预览、原文件下载、批量下载及图片/视频保存系统相册；预览图和原图分别获取，下载使用流式文件任务并保留文件名。PDF、音频等通过原生文件预览打开。请求不将令牌传给其他域名，不将带令牌的图片地址交给浏览器。
 
 ## 构建
 
