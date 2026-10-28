@@ -57,7 +57,10 @@ struct NativeUpload: View {
                     .buttonStyle(.borderedProminent).disabled(busy).frame(minHeight: 44)
             }
             if busy { ProgressView() }
-            if result != .null { NativeResult(value: result, definitions: spec["resultItems"].array) }
+            if result != .null {
+                NativeResult(value: result, definitions: spec["resultItems"].array)
+                if !result["url"].text.isEmpty { NativeGallery(rows: [result], spec: .null) }
+            }
             if let error { Text(error).font(.subheadline).foregroundStyle(.orange) }
         }
         .sheet(isPresented: $camera) { CameraCapture { image in
@@ -109,6 +112,7 @@ struct NativeUpload: View {
         Task {
             do {
                 var values = fields
+                values["filename"] = .string(filename)
                 for field in spec["inputs"].array {
                     let value = NativeBinding.fieldValue(field, row: .null, values: values)
                     if let message = NativeBinding.validation(field, value: value) { throw HubFailure(message: message) }

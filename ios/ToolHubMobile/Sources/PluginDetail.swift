@@ -53,7 +53,7 @@ struct PluginDetailView: View {
                 }
                 ForEach(plugin.warnings, id: \.self) { Text($0).font(.footnote).foregroundStyle(.secondary) }
             }.padding(20)
-        }.background { CanvasBackground() }.navigationTitle(plugin.name).navigationBarTitleDisplayMode(.inline)
+        }.scrollDismissesKeyboard(.interactively).background { CanvasBackground() }.navigationTitle(plugin.name).navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { store.toggleFavorite(plugin.id) } label: { Image(systemName: store.favorites.contains(plugin.id) ? "star.fill" : "star") }
@@ -125,7 +125,7 @@ struct NativeWidget: View {
             } else if kind == "remote" {
                 NativeRemote(spec: spec)
             } else if kind == "image" {
-                RemoteImage(path: NativeBinding.endpoint(spec["endpoint"].text, row: context, fields: fields))
+                NativeGallery(rows: [.object(["url": .string(NativeBinding.endpoint(spec["endpoint"].text, row: context, fields: fields)), "title": .string(title), "kind": .string("image")])], spec: .null)
             } else if kind == "stats" {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), alignment: .leading)], alignment: .leading, spacing: 20) {
                     ForEach(Array(spec["items"].array.enumerated()), id: \.offset) { _, item in
@@ -277,7 +277,7 @@ struct NativeWidget: View {
         Task {
             do {
                 if action["download"].bool {
-                    shared = SharedFile(url: try await store.api.download(action["endpoint"].text))
+                    shared = SharedFile(url: try await store.api.download(action["endpoint"].text, method: action["method"].text.isEmpty ? "GET" : action["method"].text, body: action["body"] == .null ? nil : action["body"], form: action["encoding"].text == "form"))
                     feedback = "文件已下载，可保存或分享。"
                 } else {
                     let result = try await store.api.json(action["endpoint"].text,

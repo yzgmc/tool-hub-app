@@ -147,8 +147,8 @@ struct HubAPI {
         if result.object.keys.contains("data") && result.object.keys.contains("error") { return result["data"] }
         return result
     }
-    func download(_ path: String, filename: String = "") async throws -> URL {
-        var request = try request(path)
+    func download(_ path: String, filename: String = "", method: String = "GET", body: JSON? = nil, form: Bool = false) async throws -> URL {
+        var request = try request(path, method: method, body: body, form: form)
         request.setValue("*/*", forHTTPHeaderField: "Accept")
         let (temporary, response) = try await Self.session.download(for: request)
         guard let http = response as? HTTPURLResponse else { throw HubFailure(message: "文件服务器未返回有效响应。") }

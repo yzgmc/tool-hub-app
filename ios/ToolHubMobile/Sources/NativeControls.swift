@@ -137,7 +137,7 @@ struct NativeRecordView: View {
                         NativeWidget(spec: NativeBinding.value(widget, row: record.source, fields: [:]), refreshID: refreshID, context: record.source)
                     }
                 }.padding(20)
-            }.background { CanvasBackground() }.navigationTitle(record.title).navigationBarTitleDisplayMode(.inline)
+            }.scrollDismissesKeyboard(.interactively).background { CanvasBackground() }.navigationTitle(record.title).navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
                 .refreshable { refreshID = UUID() }
         }
