@@ -26,6 +26,8 @@ targets:
       path: Support/Info.plist
       properties:
         CFBundleDisplayName: ToolHub
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
