@@ -25,3 +25,5 @@ token.txt
 .env.*
 __pycache__/
 Support/Info.plist
+
+/ios/ToolHubMobile/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png

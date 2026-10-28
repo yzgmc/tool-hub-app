@@ -208,7 +208,7 @@ struct SettingsView: View {
                     Label("ToolHub", systemImage: "square.stack.3d.up.fill").font(.title2.weight(.semibold)).padding(.vertical, 8)
                     Text("一个入口，连接你的所有工具。").foregroundStyle(.secondary)
                 }
-                Section("连接服务器") {
+                Section {
                     TextField("服务器地址", text: $server).textContentType(.URL).keyboardType(.URL)
                         .textInputAutocapitalization(.never).autocorrectionDisabled().accessibilityIdentifier("serverAddress")
                     SecureField("连接令牌", text: $token).textContentType(.password).textInputAutocapitalization(.never)
@@ -226,7 +226,7 @@ struct SettingsView: View {
                         HStack { Text(busy ? "正在连接…" : "连接并同步"); Spacer(); if busy { ProgressView() } else { Image(systemName: "arrow.right") } }
                     }.disabled(busy || server.isEmpty).frame(minHeight: 44)
                     if let message { Label(message, systemImage: succeeded ? "checkmark.circle" : "exclamationmark.circle").foregroundStyle(succeeded ? .green : .orange) }
-                } footer: { Text("填写手机可访问的总控台手机网关地址。令牌只保存在本机钥匙串中。") }
+                } header: { Text("连接服务器") } footer: { Text("填写手机可访问的总控台手机网关地址。令牌只保存在本机钥匙串中。") }
                 Section("关于") {
                     LabeledContent("版本", value: "2.0 · 原生重构")
                     LabeledContent("工具同步", value: "下拉刷新 · 前台自动同步")

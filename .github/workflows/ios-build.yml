@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["ios/**", ".github/workflows/ios-build.yml"]
+    paths: ["ios/**", "scripts/**", ".github/workflows/ios-build.yml"]
 permissions:
   contents: read
 concurrency:
@@ -22,6 +22,8 @@ jobs:
           xcodebuild -version
       - name: Install XcodeGen
         run: brew install xcodegen
+      - name: Render native app icon
+        run: swift scripts/make-icon.swift ios/ToolHubMobile/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
       - name: Generate Xcode project
         working-directory: ios/ToolHubMobile
         run: xcodegen
